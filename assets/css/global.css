@@ -1,0 +1,6 @@
+#layout {
+    --navbar_height: 60px;
+    
+    display: flex;
+    flex-direction: column;
+}

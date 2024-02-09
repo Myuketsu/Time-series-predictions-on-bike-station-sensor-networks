@@ -1,0 +1,33 @@
+.navbar {
+    height: var(--navbar_height);
+}
+
+.main_dropdown_navbar {
+    text-transform: uppercase;
+}
+
+.main_dropdown_navbar > .dropdown-menu {
+    border-radius: 5px;
+    right: 0;
+    left: initial;
+    text-transform: none;
+}
+
+#navbar_title {
+    display: flex;
+    align-items: center;
+    text-transform: uppercase;
+}
+
+#navbar_title > *:last-child {
+    margin-left: 10px;
+}
+
+.navbar_link {
+    display: flex;
+    border-radius: 5px;
+}
+
+.navbar_link > *:last-child {
+    margin-left: 10px;
+}
