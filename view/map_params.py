@@ -8,7 +8,7 @@ def get_markers(city: City) -> list[dl.Marker]:
         ) for _, row in city.df_coordinates.iterrows()
     ]
 
-def get_bounds(city: City, tolerance: float=0.05) -> list[float]:
+def get_bounds(city: City, tolerance: float=0.1) -> list[float]:
     min_coordinate = [city.df_coordinates['latitude'].min(), city.df_coordinates['longitude'].min()]
     max_coordinate = [city.df_coordinates['latitude'].max(), city.df_coordinates['longitude'].max()]
 
