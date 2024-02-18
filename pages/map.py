@@ -30,5 +30,6 @@ def viewport_map(index: int):
         attributionControl=False,
         doubleClickZoom=False,
         zoomSnap=0.3,
+        minZoom=12.4,
         id='viewport_map'
     )

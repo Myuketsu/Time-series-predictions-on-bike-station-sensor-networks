@@ -3,6 +3,8 @@ from os import listdir
 from os.path import isdir
 
 CITIES_PATH = './data/city'
+BASE_FILENAME_HOUR = 'X_hour_'
+BASE_FILENAME_COORDINATES = 'coordinates_'
 
 class City:
     def __init__(self, name: str, df_hours: pd.DataFrame, df_coordinates: pd.DataFrame) -> None:
@@ -34,7 +36,7 @@ for city in listdir(CITIES_PATH):
     CITIES.append(
         City(
             name=city,
-            df_hours=pd.read_csv(f'{CITIES_PATH}/{city}/X_hour_{city.lower()}.csv'),
-            df_coordinates=pd.read_csv(f'{CITIES_PATH}/{city}/coordinates_{city.lower()}.csv')
+            df_hours=pd.read_csv(f'{CITIES_PATH}/{city}/{BASE_FILENAME_HOUR}{city.lower()}.csv'),
+            df_coordinates=pd.read_csv(f'{CITIES_PATH}/{city}/{BASE_FILENAME_COORDINATES}{city.lower()}.csv')
         )
     )
