@@ -12,7 +12,7 @@ register_page(__name__, path='/map', name='Carte', title='TER', order=2,
 def layout():
     return html.Div(
         [
-            viewport_map(index=0)
+            viewport_map(index=1)
         ]
     )
 

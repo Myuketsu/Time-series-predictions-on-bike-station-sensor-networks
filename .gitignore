@@ -2,3 +2,6 @@ view/__pycache__
 pages/__pycache__
 pages/menu/__pycache__
 data/city/__pycache__
+venv
+*.env
+config.py
