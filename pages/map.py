@@ -15,13 +15,12 @@ register_page(__name__, path='/map', name='Carte', title='TER', order=2,
 modal = dbc.Modal(
     [
         dbc.ModalHeader(dbc.ModalTitle("Distribution des vélos")),
-        dbc.ModalBody(dcc.Graph(figure=figures.bike_distrubution("00037-ste-lucie"),id='bike-graph')),
+        dbc.ModalBody(dcc.Graph(figure=figures.bike_distrubution(""),id='bike-graph')),
     ],
     id="modal-graph",
     is_open=False, 
     size='xl'
 )
-
 
 def layout():
     return html.Div(
