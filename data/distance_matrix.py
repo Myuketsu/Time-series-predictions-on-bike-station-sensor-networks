@@ -9,8 +9,8 @@ from load_key import api_key
 gmaps = googlemaps.Client(key=api_key)
 
 df_coordinates = CITIES[1].df_coordinates
-
 df_coordinates.rename(columns={'Unnamed: 0': 'station_id'}, inplace=True)
+
 
 # Necessaire pour contourner les limitations de l'API Distance Matrix (10 éléments max)
 def divide_elements(elements, max_size):
@@ -18,7 +18,9 @@ def divide_elements(elements, max_size):
     for i in range(0, len(elements), max_size):
         yield elements[i:i + max_size]
 
+
 def compute_distances(df):
+    """Compute the distance matrix between stations."""
     stations = df[['latitude', 'longitude']].apply(lambda x: f"{x.latitude},{x.longitude}", axis=1).tolist()
     distances = np.zeros((len(stations), len(stations)), dtype=object)
 
@@ -31,12 +33,10 @@ def compute_distances(df):
                         distances[stations.index(lot_origines[i])][stations.index(lot_destinations[j])] = element['distance']['text']
                     else:
                         distances[stations.index(lot_origines[i])][stations.index(lot_destinations[j])] = None
-
     return distances
+
 
 distances = compute_distances(df_coordinates)
 df_distances = pd.DataFrame(distances, index=df_coordinates['station_id'], columns=df_coordinates['station_id'])
-
 df_distances.to_csv('distances_entre_stations.csv')
-
 print("Matrice des distances sauvegardée.")
