@@ -12,7 +12,7 @@ app = Dash(
 )
 
 app.title = 'TER'
-app._favicon = './pictures/bike_icon.svg'
+app._favicon = './pictures/bike_icon_2.svg'
 
 app.layout = html.Div(
     [
