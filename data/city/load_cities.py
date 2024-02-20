@@ -43,20 +43,18 @@ class City:
     def df_coordinates(self) -> pd.DataFrame:
         return self.__df_coordinates.copy()
 
-CITIES: list[City] = []
+CITIES: dict[str, City] = {}
 for city in listdir(CITIES_PATH):
     if city[-3:] == '.py' or city == '__pycache__':
         continue
 
-    CITIES.append(
-        City(
-            name=city,
-            df_hours=pd.read_csv(
-                f'{CITIES_PATH}/{city}/{BASE_FILENAME_HOUR}{city.lower()}.csv',
-                index_col=0
-            ),
-            df_coordinates=pd.read_csv(
-                f'{CITIES_PATH}/{city}/{BASE_FILENAME_COORDINATES}{city.lower()}.csv',
-            ).rename(columns={'Unnamed: 0': 'code_name'})
-        )
+    CITIES[city] = City(
+        name=city,
+        df_hours=pd.read_csv(
+            f'{CITIES_PATH}/{city}/{BASE_FILENAME_HOUR}{city.lower()}.csv',
+            index_col=0
+        ),
+        df_coordinates=pd.read_csv(
+            f'{CITIES_PATH}/{city}/{BASE_FILENAME_COORDINATES}{city.lower()}.csv',
+        ).rename(columns={'Unnamed: 0': 'code_name'})
     )

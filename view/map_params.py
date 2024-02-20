@@ -6,8 +6,8 @@ def get_markers(city: City) -> list[dl.Marker]:
         dl.Marker(
             position=[row['latitude'], row['longitude']],
             children=[
-                dl.Tooltip(row['Unnamed: 0']), 
+                dl.Tooltip(row['code_name']), 
             ],
-            id={"type": "marker", "index": row['Unnamed: 0']}  
+            id={"type": "marker", "code_name": row['code_name']}
         ) for _, row in city.df_coordinates.iterrows()
     ]

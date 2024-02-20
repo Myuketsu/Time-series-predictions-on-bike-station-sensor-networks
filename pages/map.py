@@ -1,10 +1,15 @@
-from dash import html, register_page, Input, Output, State, no_update, callback, ctx, dcc, callback_context, ALL
+# Dash imports
+from dash import html, dcc, Input, Output, State
+from dash import register_page, callback
+from dash import ctx, no_update, ALL
+
+# Dash extensions
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_mantine_components as dmc
-import json
 from dash_iconify import DashIconify
-from datetime import datetime, date
+
+import json
 
 from data.city.load_cities import CITIES
 from view.map_params import get_markers
@@ -13,30 +18,35 @@ from view import figures
 register_page(__name__, path='/map', name='Carte', title='TER', order=2,
               category='Statistique Descriptive', icon='lets-icons:map-duotone')
 
-modal = dbc.Modal(
-    [
-        dbc.ModalHeader(dbc.ModalTitle("Distribution des vélos")),
-        dbc.ModalBody(dcc.Graph(figure=figures.bike_distrubution("00037-ste-lucie"),id='bike-graph')),
-    ],
-    id="modal-graph",
-    is_open=False, 
-    size='xl'
-)
-
+CITY = CITIES['Toulouse']
 
 def layout():
-    index_city = 1
     return html.Div(
         [
-            modal,
-            viewport_map(index=index_city),
-            map_menus(index=index_city)
+            viewport_map(),
+            map_menus(),
+            get_modal()
         ]
     )
 
-def map_menus(index: int):
-    codes_names_list = CITIES[index].df_coordinates['code_name'].to_list()
-    date_range = [CITIES[index].df_hours['date'].min().date(), CITIES[index].df_hours['date'].max().date()]
+def get_modal():
+    return dbc.Modal(
+        [
+            dbc.ModalHeader(
+                dbc.ModalTitle("Distribution des vélos")
+            ),
+            dbc.ModalBody(
+                dcc.Graph(figure=None, id='bike-graph')
+            )
+        ],
+        id="modal-graph",
+        is_open=False, 
+        size='xl'
+    )
+
+def map_menus():
+    codes_names_list = CITY.df_coordinates['code_name'].to_list()
+    date_range = [CITY.df_hours['date'].min().date(), CITY.df_hours['date'].max().date()]
     return html.Div(
         [
             dmc.DateRangePicker(
@@ -60,14 +70,14 @@ def map_menus(index: int):
         id='map_menus'
     )
 
-def viewport_map(index: int):
+def viewport_map():
     return dl.Map(
         [
             dl.TileLayer(),  # OpenStreetMap par défaut
-        ] + get_markers(CITIES[index]),
-        center=CITIES[index].centroid,
-        bounds=CITIES[index].bounds,
-        maxBounds=CITIES[index].bounds,
+        ] + get_markers(CITY),
+        center=CITY.centroid,
+        bounds=CITY.bounds,
+        maxBounds=CITY.bounds,
         zoomControl=False,
         scrollWheelZoom=True,
         dragging=True,
@@ -79,16 +89,23 @@ def viewport_map(index: int):
     )
 
 @callback(
-    [Output("modal-graph", "is_open"), Output("bike-graph", "figure")],
-    [Input({"type": "marker", "index": ALL}, "n_clicks")], 
-    [State("modal-graph", "is_open")],
+    [
+        Output("modal-graph", "is_open"),
+        Output("bike-graph", "figure")
+    ],
+    [
+        Input({"type": "marker", "code_name": ALL}, "n_clicks")
+    ], 
+    [
+        State("modal-graph", "is_open")
+    ]
 )
 def display_graph(n_clicks, is_open):
     if not any(n_clicks):
         return no_update
-    else:
-        ctx = callback_context
-        station_id = ctx.triggered[0]['prop_id'].split(".")[0]
-        station_id = json.loads(station_id)["index"]
-        figure = figures.bike_distrubution(station_id)
-        return not is_open, figure 
+    
+    station_id = ctx.triggered[0]['prop_id'].split(".")[0]
+    code_name = json.loads(station_id)["code_name"]
+    figure = figures.bike_distrubution(CITY, code_name)
+
+    return not is_open, figure 
