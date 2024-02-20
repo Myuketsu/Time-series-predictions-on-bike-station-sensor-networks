@@ -1,9 +1,9 @@
-#viewport_map {
+#viewport_map_statistics {
     height: calc(100vh - var(--navbar_height));
     width: 100%;
 }
 
-#map_menus {
+#menus_map_statistics {
     display: flex;
     position: absolute;
     z-index: 1010;
@@ -11,11 +11,11 @@
     left: 8px;
 }
 
-#date_range_picker_map {
+#date_range_picker_map_statistics {
     width: 300px;
     margin-right: 8px;
 }
 
-#select_map {
+#select_map_statistics {
     width: 250px;
 }

@@ -1,0 +1,46 @@
+#correlation_layout {
+    display: flex;
+}
+
+#viewport_map_correlation {
+    height: calc(100vh - var(--navbar_height));
+    width: 60vw;
+}
+
+#select_and_plot_correlation {
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    width: 40vw;
+}
+
+#transferlist_correlation {
+    width: 100%;
+}
+
+#divider_correlation {
+    margin: 12px 0px;
+}
+
+#correlation_plot {
+    display: flex;
+    height: 100%;
+    border-radius: 4px;
+}
+
+#correlation_graph {
+    width: 100%;
+}
+
+#select_container_correlation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 300px;
+    margin: auto;
+    margin-bottom: 8px;
+}
+
+#title_select_correlation {
+    margin-right: 8px;
+}

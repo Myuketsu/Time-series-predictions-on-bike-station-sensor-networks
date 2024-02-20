@@ -58,3 +58,5 @@ for city in listdir(CITIES_PATH):
             f'{CITIES_PATH}/{city}/{BASE_FILENAME_COORDINATES}{city.lower()}.csv',
         ).rename(columns={'Unnamed: 0': 'code_name'})
     )
+
+CITY = CITIES['Toulouse']
