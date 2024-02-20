@@ -1,13 +1,5 @@
 import pandas as pd
-import dash_leaflet as dl
 
-from view.map_params import get_bounds
-
-# df = pd.read_csv('./data/city/Paris/coordinates_paris.csv')
-# print(df['latitude'].min())
-
-# print(get_bounds())
-
-
-import math
-print(math.log2((40075016.686*math.cos(math.radians(43.66)))))
+df = pd.read_csv('./data/city/Toulouse/X_hour_toulouse.csv', index_col=0)
+df['date'] = pd.date_range('04-01-2016', '10-31-2016', freq='1h')[:len(df)]
+print(df['date'].min().date())
