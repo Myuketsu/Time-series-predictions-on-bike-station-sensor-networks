@@ -29,15 +29,30 @@ def layout():
 def get_modal():
     return dbc.Modal(
         [
-            dbc.ModalHeader(
-                dbc.ModalTitle('Distribution des vélos')
-            ),
+            dbc.ModalHeader(dbc.ModalTitle('Distribution des vélos')),
             dbc.ModalBody(
-                dcc.Graph(figure=figures.create_empty_graph(), id='bike-graph')
+                [
+                    dbc.Tabs(
+                        [
+                            dbc.Tab(
+                                dcc.Graph(figure=figures.create_empty_graph(), id='bike-graph'),
+                                label="Graphique Linéaire",
+                                tab_id="tab-line-chart",
+                            ),
+                            dbc.Tab(
+                                dcc.Graph(figure=figures.create_empty_graph(), id='box-plot'),
+                                label="Box Plot",
+                                tab_id="tab-box-plot",
+                            ),
+                        ],
+                        id="tabs",
+                        active_tab="tab-line-chart",
+                    )
+                ]
             )
         ],
         id='modal-graph',
-        is_open=False, 
+        is_open=False,
         size='xl'
     )
 
@@ -70,24 +85,36 @@ def menus_map():
 @callback(
     [
         Output('modal-graph', 'is_open'),
-        Output('bike-graph', 'figure')
+        Output('bike-graph', 'figure'),
+        Output('box-plot', 'figure'),
+        Output('select_map_statistics', 'value') 
     ],
     [
         Input({'type': 'marker', 'code_name': ALL}, 'n_clicks'),
-        Input('date_range_picker_map_statistics', 'value')
-    ],
-    [
-        State('modal-graph', 'is_open')
+        Input('date_range_picker_map_statistics', 'value'),
+        Input('select_map_statistics', 'value')
     ]
 )
-def display_graph(marker_clicks, date_range, modal_is_open):
+def display_graph(marker_clicks, date_range, select_value):
+    open_modal = no_update
+    updated_figure_line = no_update
+    updated_figure_box = no_update
+    updated_select_value = no_update 
 
     triggered_id = ctx.triggered[0]['prop_id'] if ctx.triggered else ''
     triggered_value = ctx.triggered[0]['value'] if ctx.triggered else ''
-    
-    if triggered_id and 'marker' in triggered_id and triggered_value:
+
+    if 'marker' in triggered_id and triggered_value:
         station_id = json.loads(triggered_id.split('.')[0])['code_name']
-        figure = figures.bike_distrubution(CITY, station_id, date_range)
-        return True, figure  
-    else:
-        return no_update, no_update
+        updated_figure_line = figures.bike_distrubution(CITY, station_id, date_range)
+        updated_figure_box = figures.bike_boxplot(CITY, station_id, date_range)
+        open_modal = True
+        updated_select_value = station_id  
+
+    if 'select_map_statistics' in triggered_id and triggered_value:
+        station_id = select_value
+        updated_figure_line = figures.bike_distrubution(CITY, station_id, date_range)
+        updated_figure_box = figures.bike_boxplot(CITY, station_id, date_range)
+        open_modal = True
+
+    return open_modal, updated_figure_line, updated_figure_box, updated_select_value

@@ -18,6 +18,14 @@ def bike_distrubution(city: City, station: str, date_range: list[str]):
         template="seaborn"
     )
 
+def bike_boxplot(city: City, station: str, date_range: list[str]):
+    return px.box(
+        data_frame=get_data_between_dates(city, date_range),
+        x=station,
+        title=f"Boîte à moustache de la station {station}",
+        template="seaborn"
+    )
+
 def correlation_plot(df: pd.DataFrame):
     df_splited = df.T.columns.str.split('-', n=1, expand=True)
     codes_columns = df_splited.get_level_values(0)
