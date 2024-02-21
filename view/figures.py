@@ -5,6 +5,9 @@ import pandas as pd
 
 from data.city.load_cities import City
 
+def create_empty_graph():
+    return px.line(None)
+
 def bike_distrubution(city: City, station: str):
     return px.line(
         data_frame=city.df_hours,

@@ -33,7 +33,7 @@ def get_modal():
                 dbc.ModalTitle('Distribution des vélos')
             ),
             dbc.ModalBody(
-                dcc.Graph(figure=None, id='bike-graph')
+                dcc.Graph(figure=figures.create_empty_graph(), id='bike-graph')
             )
         ],
         id='modal-graph',
@@ -74,17 +74,14 @@ def menus_map():
     ],
     [
         Input({'type': 'marker', 'code_name': ALL}, 'n_clicks')
-    ], 
-    [
-        State('modal-graph', 'is_open')
     ]
 )
-def display_graph(n_clicks, is_open):
-    if not any(n_clicks):
-        return no_update
+def display_graph(n_clicks):
+    if n_clicks is None or not any(n_clicks):
+        return no_update, no_update
     
     station_id = ctx.triggered[0]['prop_id'].split('.')[0]
     code_name = json.loads(station_id)['code_name']
     figure = figures.bike_distrubution(CITY, code_name)
 
-    return not is_open, figure
+    return True, figure
