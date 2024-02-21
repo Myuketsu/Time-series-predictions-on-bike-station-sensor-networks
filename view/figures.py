@@ -4,13 +4,14 @@ import plotly.graph_objects as go
 import pandas as pd
 
 from data.city.load_cities import City
+from data.data import get_data_between_dates
 
 def create_empty_graph():
     return px.line(None)
 
-def bike_distrubution(city: City, station: str):
+def bike_distrubution(city: City, station: str, date_range: list[str]):
     return px.line(
-        data_frame=city.df_hours,
+        data_frame=get_data_between_dates(city, date_range),
         x='date',
         y=station,
         title=f"Distribution des vélos dans la station {station}",
@@ -47,20 +48,3 @@ def correlation_plot(df: pd.DataFrame):
     fig.update_layout(
         margin=dict(l=5, r=5, t=5, b=5)
     )
-
-def bike_distrubution(station: str ="") -> px.line: 
-    if station == "":
-        return None
-    fig = px.line(city.df_hours, x="id", y=station, title=f"Distribution des vélos dans la station {station}", template="seaborn")
-    fig.update_layout(
-        xaxis_title="Heure",
-        yaxis_title="Ratio de vélos",
-        font=dict(
-            family="Arial",
-            size=18,
-            color="#7f7f7f"
-        )
-    )
-    fig.update_traces(mode="lines")
-    fig.update_layout(hovermode="x unified")
-    return fig

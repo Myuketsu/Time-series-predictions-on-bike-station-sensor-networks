@@ -6,3 +6,4 @@ dash_mantine_components
 googlemaps
 numpy
 pandas
+scipy

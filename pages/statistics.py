@@ -73,15 +73,21 @@ def menus_map():
         Output('bike-graph', 'figure')
     ],
     [
-        Input({'type': 'marker', 'code_name': ALL}, 'n_clicks')
+        Input({'type': 'marker', 'code_name': ALL}, 'n_clicks'),
+        Input('date_range_picker_map_statistics', 'value')
+    ],
+    [
+        State('modal-graph', 'is_open')
     ]
 )
-def display_graph(n_clicks):
-    if n_clicks is None or not any(n_clicks):
-        return no_update, no_update
-    
-    station_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    code_name = json.loads(station_id)['code_name']
-    figure = figures.bike_distrubution(CITY, code_name)
+def display_graph(marker_clicks, date_range, modal_is_open):
 
-    return True, figure
+    triggered_id = ctx.triggered[0]['prop_id'] if ctx.triggered else ''
+    triggered_value = ctx.triggered[0]['value'] if ctx.triggered else ''
+    
+    if triggered_id and 'marker' in triggered_id and triggered_value:
+        station_id = json.loads(triggered_id.split('.')[0])['code_name']
+        figure = figures.bike_distrubution(CITY, station_id, date_range)
+        return True, figure  
+    else:
+        return no_update, no_update

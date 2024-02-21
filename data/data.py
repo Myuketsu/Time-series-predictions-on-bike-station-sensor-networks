@@ -20,3 +20,6 @@ def get_correlation_on_selected_stations(city: City, columns: list[str], ordered
     mask[np.triu_indices_from(mask)] = True
 
     return df_corr.mask(mask)
+
+def get_data_between_dates(city: City, date_range: list[str]):
+    return city.df_hours[(city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))]
