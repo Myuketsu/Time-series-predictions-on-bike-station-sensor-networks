@@ -11,7 +11,7 @@ from dash_iconify import DashIconify
 import json
 
 from data.city.load_cities import CITY
-from view.map import viewport_map
+from view.map import viewport_map, get_markers
 from view import figures
 
 register_page(__name__, path='/statistique_map', name='Statistique', title='TER', order=2,
@@ -87,34 +87,40 @@ def menus_map():
         Output('modal-graph', 'is_open'),
         Output('bike-graph', 'figure'),
         Output('box-plot', 'figure'),
-        Output('select_map_statistics', 'value') 
+        Output('select_map_statistics', 'value'),
+        Output('viewport_map_statistics', 'children'),
     ],
     [
         Input({'type': 'marker', 'code_name': ALL}, 'n_clicks'),
         Input('date_range_picker_map_statistics', 'value'),
-        Input('select_map_statistics', 'value')
+        Input('select_map_statistics', 'value'),
+        Input('modal-graph', 'is_open')
     ]
 )
-def display_graph(marker_clicks, date_range, select_value):
+def display_graph(marker_clicks, date_range, select_value, is_open_modal):
     open_modal = no_update
     updated_figure_line = no_update
     updated_figure_box = no_update
     updated_select_value = no_update 
+    map_children = no_update
 
     triggered_id = ctx.triggered[0]['prop_id'] if ctx.triggered else ''
     triggered_value = ctx.triggered[0]['value'] if ctx.triggered else ''
 
-    if 'marker' in triggered_id and triggered_value:
-        station_id = json.loads(triggered_id.split('.')[0])['code_name']
+    if triggered_id == '':
+        return open_modal, updated_figure_line, updated_figure_box, updated_select_value, map_children
+
+    print(triggered_id, triggered_value)
+
+    if ('marker' in triggered_id and triggered_value) or ('select_map_statistics' in triggered_id and triggered_value):
+        station_id = json.loads(triggered_id.split('.')[0])['code_name'] if 'marker' in triggered_id else select_value
+        open_modal = True
+        updated_select_value = station_id
         updated_figure_line = figures.bike_distrubution(CITY, station_id, date_range)
         updated_figure_box = figures.bike_boxplot(CITY, station_id, date_range)
-        open_modal = True
-        updated_select_value = station_id  
+        map_children = viewport_map(CITY, 'viewport_map_statistics', highlight=station_id)
 
-    if 'select_map_statistics' in triggered_id and triggered_value:
-        station_id = select_value
-        updated_figure_line = figures.bike_distrubution(CITY, station_id, date_range)
-        updated_figure_box = figures.bike_boxplot(CITY, station_id, date_range)
-        open_modal = True
+    if 'modal-graph' in triggered_id and not is_open_modal:
+        map_children = viewport_map(CITY, 'viewport_map_statistics')
 
-    return open_modal, updated_figure_line, updated_figure_box, updated_select_value
+    return open_modal, updated_figure_line, updated_figure_box, updated_select_value, map_children
