@@ -1,7 +1,7 @@
 # Dash imports
 from dash import html, dcc, Input, Output, State
 from dash import register_page, callback
-from dash import ctx, no_update, ALL, MATCH
+from dash import ctx, no_update, ALL
 
 # Dash extensions
 import dash_bootstrap_components as dbc
