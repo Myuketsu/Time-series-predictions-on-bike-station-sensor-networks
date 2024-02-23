@@ -7,7 +7,7 @@ from scipy.spatial import distance
 from data.city.load_cities import City
 
 def get_correlation_on_selected_stations(city: City, columns: list[str], ordered: bool=False):
-    df_corr = city.df_hours[columns].corr().round(3)
+    df_corr = city.df_hours[sorted(columns)].corr().round(3)
 
     if ordered:
         distance_matrix = distance.squareform(1 - df_corr.abs().values)
