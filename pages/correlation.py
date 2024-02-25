@@ -19,8 +19,7 @@ register_page(__name__, path='/correlation', name='Correlation', title='TER', or
 def layout():
     return html.Div(
         [
-            dcc.Store(id='markers_colors', data=[[], list(range(len(CITY.df_coordinates)))]),
-            map.viewport_map(CITY, 'viewport_map_correlation', False, 'red'),
+            map.viewport_map(CITY, 'viewport_map_correlation', 'red'),
             select_and_plot()
         ],
         id='correlation_layout'
@@ -79,73 +78,36 @@ def get_correlation_plot():
         id='correlation_plot'
     )
 
-# @callback(
-#     [
-#         Output('correlation_graph', 'figure'),
-#         Output('transferlist_correlation', 'value'),
-#         Output({'type': 'marker', 'code_name': ALL, 'index': ALL}, 'icon'),
-#         Output('markers_colors', 'data')
-#     ],
-#     [
-#         Input('select_correlation', 'value'),
-#         Input('transferlist_correlation', 'value'),
-#         Input({'type': 'marker', 'code_name': ALL, 'index': ALL}, 'n_clicks')
-#     ],
-#     [
-#         State('markers_colors', 'data')
-#     ]
-# )
-# def correlation_plot_update(in_select, in_transferlist, in_n_clicks, state_last_transferlist):
-#     triggeredId = ctx.triggered_id
-
-#     corr_graph = no_update
-#     transferlist_value = in_transferlist
-#     markers_icons = [no_update] * len(CITY.df_coordinates)
-    
-#     if isinstance(triggeredId, dict) and triggeredId['type'] == 'marker':
-#         transferlist_value = update_transferlist(transferlist_value, triggeredId['code_name'])
-
-#     markers_icons = update_markers(markers_icons, transferlist_value, state_last_transferlist)
-#     last_transferlist = [[v['index'] for v in side] for side in transferlist_value]
-
-#     selected_columns = [station['value'] for station in transferlist_value[1]]
-#     corr_graph = update_graph(selected_columns, in_select)
-
-#     return corr_graph, transferlist_value, markers_icons, last_transferlist
-
 @callback(
     [
-        Output('correlation_graph', 'figure'),
         Output('transferlist_correlation', 'value'),
         Output('viewport_map_correlation', 'children'),
-        Output('markers_colors', 'data')
+        Output('correlation_graph', 'figure')
     ],
     [
         Input('select_correlation', 'value'),
         Input('transferlist_correlation', 'value'),
         Input({'type': 'marker', 'code_name': ALL, 'index': ALL}, 'n_clicks')
-    ],
-    [
-        State('markers_colors', 'data')
     ]
 )
-def correlation_plot_update(in_select, in_transferlist, in_n_clicks, state_last_transferlist):
+def correlation_plot_update(in_select, in_transferlist, in_n_clicks):
     triggeredId = ctx.triggered_id
 
-    corr_graph = no_update
     transferlist_value = in_transferlist
-    markers_icons = [no_update] * len(CITY.df_coordinates)
+    map_children = no_update
+    corr_graph = no_update
     
     if isinstance(triggeredId, dict) and triggeredId['type'] == 'marker':
         transferlist_value = update_transferlist(transferlist_value, triggeredId['code_name'])
 
-    markers_icons = update_markers(markers_icons, transferlist_value, state_last_transferlist)
-    last_transferlist = [[station['index'] for station in side] for side in transferlist_value]
+    map_children = update_map_markers(transferlist_value)
 
-    selected_columns = [station['value'] for station in transferlist_value[1]]
-    corr_graph = update_graph(selected_columns, in_select)
+    corr_graph = update_graph(
+        selected_columns=[station['value'] for station in transferlist_value[1]],
+        in_select=in_select
+    )
 
-    return corr_graph, transferlist_value, markers_icons, last_transferlist
+    return transferlist_value, map_children, corr_graph
 
 def update_graph(selected_columns: list, in_select: bool):
     if len(selected_columns) < 2:
@@ -169,9 +131,6 @@ def update_transferlist(transferlist_value: list[list[dict]], station: str):
                 return transferlist_value
     raise ValueError('The station isn\'t on either list, it has to be!')
 
-def update_markers(markers: list, transferlist_value: list[list[dict]], last_transferlist: list[list[int]]):
-    for index, icon in enumerate([1, 0]):
-        for station in transferlist_value[index]:
-            if not station['index'] in last_transferlist[index]:
-                markers[station['index']] = icon
-    return markers
+def update_map_markers(transferlist_value: list[list[dict]]):
+    distribution = {station['index']: 'red' for station in transferlist_value[1]}
+    return map.get_map_children(CITY, distribution, 'blue')
