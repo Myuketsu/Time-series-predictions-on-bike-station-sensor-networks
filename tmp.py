@@ -11,9 +11,5 @@ import dash_leaflet.express as dlx
 # r = np.array([[[i, y] for i in a] for y in a])
 # print(np.array(r))
 
-a = [1, 2, 3]
-a.count(5)
-
-print(a.count(5))
-
-dlx.dl.DivMarker
+a = pd.DataFrame(['001-f', '005-a', '003-u'])
+print(f'{a[a[0].str.contains('001')].index[0]:>20}')

@@ -1,8 +1,11 @@
 import pandas as pd
 import numpy as np
+import shapely
 
 from scipy.cluster import hierarchy
 from scipy.spatial import distance
+
+from json import dumps
 
 from data.city.load_cities import City
 
@@ -20,3 +23,8 @@ def get_correlation_on_selected_stations(city: City, columns: list[str], ordered
     mask[np.triu_indices_from(mask)] = True
 
     return df_corr.mask(mask)
+
+def check_if_station_in_polygon(city: City, geojson) -> list:
+    polygon: shapely.Polygon = shapely.from_geojson(dumps(geojson)).geoms[-1]
+    get_station_inside = city.df_coordinates.apply(lambda row: shapely.Point(row['longitude'], row['latitude']).within(polygon), axis=1)
+    return city.df_coordinates[get_station_inside]['code_name'].to_list()

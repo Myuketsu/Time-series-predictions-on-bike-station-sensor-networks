@@ -19,7 +19,7 @@ register_page(__name__, path='/correlation', name='Correlation', title='TER', or
 def layout():
     return html.Div(
         [
-            map.viewport_map(CITY, 'viewport_map_correlation', 'red'),
+            map.viewport_map(CITY, 'viewport_map_correlation', True, 'red'),
             select_and_plot()
         ],
         id='correlation_layout'
@@ -41,7 +41,14 @@ def select_and_plot():
             ),
             dmc.Divider(label='CORRÉLATION DES STATIONS SÉLECTIONNÉES', labelPosition='center', id='divider_correlation'),
             get_select_sort(),
-            get_correlation_plot()
+            get_correlation_plot(),
+            dbc.Popover(
+                is_open=False,
+                target='correlation_plot',
+                trigger='hover',
+                id='correlation_hover',
+                className='d-none'
+            )
         ],
         id='select_and_plot_correlation'
     )
@@ -63,7 +70,7 @@ def get_select_sort():
     )
 
 def get_correlation_plot():
-    return dmc.LoadingOverlay(
+    return html.Div(
         [
             dcc.Graph(
                 figure=figures.correlation_plot(
@@ -87,25 +94,38 @@ def get_correlation_plot():
     [
         Input('select_correlation', 'value'),
         Input('transferlist_correlation', 'value'),
-        Input({'type': 'marker', 'code_name': ALL, 'index': ALL}, 'n_clicks')
+        Input('edit_control', 'geojson'),
+        Input({'type': 'marker', 'code_name': ALL, 'index': ALL}, 'n_clicks'),
+        Input('correlation_graph', 'hoverData')
+    ],
+    [
+        State('correlation_hover', 'is_open')
     ]
 )
-def correlation_plot_update(in_select, in_transferlist, in_n_clicks):
+def correlation_plot_update(in_select, in_transferlist, in_geojson, in_n_clicks, in_hover_data, state_is_hover):
     triggeredId = ctx.triggered_id
 
     transferlist_value = in_transferlist
     map_children = no_update
     corr_graph = no_update
     
+    if triggeredId == 'edit_control':
+        transferlist_value = switch_station_transferlist(in_geojson, transferlist_value)
+
     if isinstance(triggeredId, dict) and triggeredId['type'] == 'marker':
         transferlist_value = update_transferlist(transferlist_value, triggeredId['code_name'])
 
-    map_children = update_map_markers(transferlist_value)
+    hover_data = None
+    if state_is_hover and in_hover_data is not None:
+        hover_data = in_hover_data['points'][0]
 
-    corr_graph = update_graph(
-        selected_columns=[station['value'] for station in transferlist_value[1]],
-        in_select=in_select
-    )
+    map_children = update_map_markers(hover_data, transferlist_value)
+
+    if triggeredId != 'correlation_graph':
+        corr_graph = update_graph(
+            selected_columns=[station['value'] for station in transferlist_value[1]],
+            in_select=in_select
+        )
 
     return transferlist_value, map_children, corr_graph
 
@@ -131,6 +151,18 @@ def update_transferlist(transferlist_value: list[list[dict]], station: str):
                 return transferlist_value
     raise ValueError('The station isn\'t on either list, it has to be!')
 
-def update_map_markers(transferlist_value: list[list[dict]]):
+def update_map_markers(hover_data: dict | None, transferlist_value: list[list[dict]]):
     distribution = {station['index']: 'red' for station in transferlist_value[1]}
-    return map.get_map_children(CITY, distribution, 'blue')
+    if hover_data is not None:
+        for station in ['x', 'y']:
+            distribution[CITY.df_coordinates[CITY.df_coordinates['code_name'].str.contains(hover_data[station])].index[0]] = 'gold'
+    return map.get_map_children(CITY, distribution, True, 'blue')
+
+def switch_station_transferlist(geojson, transferlist_value: list[list[dict]]):
+    if not geojson['features']:
+        return transferlist_value
+    
+    station_to_switch = data.check_if_station_in_polygon(CITY, geojson)
+    for station in station_to_switch:
+        transferlist_value = update_transferlist(transferlist_value, station)
+    return transferlist_value
