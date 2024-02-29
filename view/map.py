@@ -1,23 +1,23 @@
 import dash_leaflet as dl
 from data.city.load_cities import City
 
-def get_markers(city: City, highlight=None) -> list[dl.Marker]:
-    highlighted_icon_url = "https://www.vanuatubeachbar.com/wp-content/uploads/leaflet-maps-marker-icons/bicycle_shop.png"
+def get_markers(city: City) -> list[dl.Marker]:
     return [
         dl.Marker(
             position=[row['latitude'], row['longitude']],
-            icon={"iconUrl": highlighted_icon_url} if row['code_name'] == highlight else None,
-            children=[dl.Tooltip(row['code_name'])],
+            children=[
+                dl.Tooltip(row['code_name']), 
+            ],
             id={"type": "marker", "code_name": row['code_name']},
+            n_clicks=0
         ) for _, row in city.df_coordinates.iterrows()
     ]
 
-
-def viewport_map(city: City, id: str, highlight=None):
+def viewport_map(city: City, id: str):
     return dl.Map(
         [
             dl.TileLayer(),  # OpenStreetMap par défaut
-        ] + get_markers(city, highlight=highlight),
+        ] + get_markers(city),
         center=city.centroid,
         bounds=city.bounds,
         maxBounds=city.bounds,
@@ -27,6 +27,6 @@ def viewport_map(city: City, id: str, highlight=None):
         attributionControl=False,
         doubleClickZoom=False,
         zoomSnap=0.3,
-        minZoom=16 if highlight else 12.4,
+        minZoom=12.4,
         id=id
     )
