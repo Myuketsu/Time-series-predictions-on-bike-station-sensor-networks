@@ -6,8 +6,8 @@ import pandas as pd
 from data.city.load_cities import City
 from data.data import get_data_between_dates
 
-def create_empty_graph():
-    return px.line(None)
+def create_empty_graph(title: str=''):
+    return px.line(None, title=title)
 
 def bike_distrubution(city: City, station: str, date_range: list[str]):
     return px.line(
