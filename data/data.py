@@ -37,10 +37,10 @@ def check_if_station_in_polygon(city: City, geojson) -> list:
     return city.df_coordinates[get_station_inside]['code_name'].to_list()
 
 def get_acp_dataframe(df: pd.DataFrame) -> None:
-    X = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
+    X_selected = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
 
     scaler = StandardScaler()
-    X = scaler.fit_transform(X)
+    X = scaler.fit_transform(X_selected)
 
     pca = PCA(n_components=80)
     X_pca = pca.fit_transform(X)
@@ -56,7 +56,7 @@ def get_acp_dataframe(df: pd.DataFrame) -> None:
     plt.title('Variance expliquée des composantes')
     plt.show()
     
-    feature_names = df.columns.values
+    feature_names = X_selected.columns.values
     
     # --- CERCLE DE CORRELATION ---
     # Calcul des coordonnées des variables dans l'espace réduit
