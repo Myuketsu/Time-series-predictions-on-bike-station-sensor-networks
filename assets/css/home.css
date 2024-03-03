@@ -1,0 +1,40 @@
+@font-face {
+    font-family: 'Roboto';
+    src: url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+}
+
+#home_layout {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    margin: auto;
+}
+
+#home_title {
+    margin-top: 25px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: bold;
+    font-size: 40px;
+    text-transform: uppercase;
+}
+
+#home_authors {
+    font-size: 20px;
+    font-style: italic;
+    color: rgb(179, 174, 174);
+}
+
+#home_divider {
+    width: 75%;
+    margin: 20px auto;
+}
+
+#home_suject {
+    display: flex;
+    width: 50%;
+    text-align: left;
+    font-size: 20px;
+    margin: auto;
+    margin-bottom: 15px;
+}
