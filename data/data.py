@@ -4,6 +4,7 @@ import shapely
 
 from scipy.cluster import hierarchy
 from scipy.spatial import distance
+from scipy.stats import gaussian_kde
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -108,5 +109,12 @@ def get_acp_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     plt.show()
 
     return df_acp
+
 def get_data_between_dates(city: City, date_range: list[str]):
     return city.df_hours[(city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))]
+
+def compute_kde(df, station):
+    x = np.linspace(0, 1, 200)
+    kde = gaussian_kde(df[station])
+    y = kde(x)
+    return x , y

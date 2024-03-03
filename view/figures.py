@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import pandas as pd
 
 from data.city.load_cities import City
-from data.data import get_data_between_dates
+from data.data import get_data_between_dates, compute_kde
 
 def create_empty_graph(title: str=''):
     return px.line(None, title=title)
@@ -25,6 +25,28 @@ def bike_boxplot(city: City, station: str, date_range: list[str]):
         title=f"Boîte à moustache de la station {station}",
         template="seaborn"
     )
+  
+def histogram(city: City, station: str, date_range: list[str]):
+    df_filtered = get_data_between_dates(city, date_range)
+    x, y = compute_kde(df_filtered, station)
+    fig = px.histogram(
+        df_filtered,
+        x=station,
+        nbins=int(1 / 0.05) - 1,
+        title=f"Histogramme et densité de la station {station}",
+        template="seaborn",
+        histnorm='probability density',
+        range_x=[0, 1],
+        labels={"value": "Valeur"}
+    )
+    
+    fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name='Densité', line=dict(color='firebrick', width=2)))
+    fig.update_layout(
+        xaxis_title="Valeur",
+        yaxis_title="Densité de probabilité",
+        legend_title="Légende"
+    )
+    return fig
 
 def correlation_plot(df: pd.DataFrame):
     df_splited = df.T.columns.str.split('-', n=1, expand=True)
@@ -56,3 +78,4 @@ def correlation_plot(df: pd.DataFrame):
     fig.update_layout(
         margin=dict(l=5, r=5, t=5, b=5)
     )
+    return fig

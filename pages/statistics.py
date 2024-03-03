@@ -42,6 +42,11 @@ def get_modal():
                                 label="Box Plot",
                                 tab_id="tab-box-plot",
                             ),
+                            dbc.Tab(
+                                dcc.Graph(figure=figures.create_empty_graph(), id='histogram'),
+                                label="Histogramme",
+                                tab_id="tab-histogram",
+                            ),
                         ],
                         id="tabs",
                         active_tab="tab-line-chart",
@@ -85,6 +90,7 @@ def menus_map():
         Output('modal-graph', 'is_open'),
         Output('bike-graph', 'figure'),
         Output('box-plot', 'figure'),
+        Output('histogram', 'figure'),
         Output('select_map_statistics', 'value'),
         
     ],
@@ -101,13 +107,15 @@ def display_graph(n_clicks, date_range, selected_station):
     modal_state = no_update
     line_plot = no_update
     box_plot = no_update
+    histogram = no_update
     station_value = no_update
     
     if (isinstance(triggeredId, dict) and triggeredId['type'] == 'marker') or (triggeredId == 'select_map_statistics'):
         station_id = triggeredId['code_name'] if isinstance(triggeredId, dict) else selected_station
         line_plot = figures.bike_distrubution(CITY, station_id, date_range)
         box_plot = figures.bike_boxplot(CITY, station_id, date_range)
+        histogram = figures.histogram(CITY, station_id, date_range)
         modal_state = True
         station_value = station_id
     
-    return modal_state, line_plot, box_plot, station_value
+    return modal_state, line_plot, box_plot, histogram, station_value
