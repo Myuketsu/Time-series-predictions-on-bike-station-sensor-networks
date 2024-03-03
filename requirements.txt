@@ -5,7 +5,9 @@ dash_iconify
 dash_leaflet
 dash_mantine_components
 googlemaps
+matplotlib
 numpy
 pandas
 scipy
 scikit-learn
+seaborn
