@@ -28,3 +28,6 @@ def check_if_station_in_polygon(city: City, geojson) -> list:
     polygon: shapely.Polygon = shapely.from_geojson(dumps(geojson)).geoms[-1]
     get_station_inside = city.df_coordinates.apply(lambda row: shapely.Point(row['longitude'], row['latitude']).within(polygon), axis=1)
     return city.df_coordinates[get_station_inside]['code_name'].to_list()
+
+def get_data_between_dates(city: City, date_range: list[str]):
+    return city.df_hours[(city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))]

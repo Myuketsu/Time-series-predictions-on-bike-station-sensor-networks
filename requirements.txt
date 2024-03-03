@@ -1,5 +1,6 @@
 dash
 dash-bootstrap-components
+dash-extensions
 dash_iconify
 dash_leaflet
 dash_mantine_components

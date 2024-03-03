@@ -1,9 +1,10 @@
 from dash import Dash, html, page_container
 from dash_bootstrap_components import themes, icons
+from dash_extensions.enrich import DashProxy
 
 from pages.menu.navbar import get_navbar
 
-app = Dash(
+app = DashProxy(
     __name__,
     use_pages=True,
     prevent_initial_callbacks=True,
