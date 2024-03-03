@@ -4,6 +4,7 @@ import shapely
 
 from scipy.cluster import hierarchy
 from scipy.spatial import distance
+from scipy.stats import gaussian_kde
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -26,6 +27,9 @@ def get_correlation_on_selected_stations(city: City, columns: list[str], ordered
     mask[np.triu_indices_from(mask)] = True
 
     return df_corr.mask(mask)
+
+def get_data_between_dates(city: City, date_range: list[str]):
+    return city.df_hours[(city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))]
 
 def check_if_station_in_polygon(city: City, geojson) -> list:
     polygon: shapely.Polygon = shapely.from_geojson(dumps(geojson)).geoms[-1]
@@ -106,6 +110,7 @@ def get_acp_dataframe(df: pd.DataFrame) -> None:
 
     return
 
+
 def get_data_between_dates(city: City, date_range: list[str]) -> pd.DataFrame:
     return city.df_hours[
         (city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))
@@ -158,3 +163,9 @@ def get_tsne_dataframe(df: pd.DataFrame) -> None:
     # print(tsne.kl_divergence_)
 
     return
+
+def compute_kde(df, station):
+    x = np.linspace(0, 1, 200)
+    kde = gaussian_kde(df[station])
+    y = kde(x)
+    return x , y
