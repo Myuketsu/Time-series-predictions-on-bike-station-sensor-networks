@@ -32,8 +32,8 @@ def check_if_station_in_polygon(city: City, geojson) -> list:
     get_station_inside = city.df_coordinates.apply(lambda row: shapely.Point(row['longitude'], row['latitude']).within(polygon), axis=1)
     return city.df_coordinates[get_station_inside]['code_name'].to_list()
 
-def get_acp_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    X = df.copy().loc[:, df.columns != 'id']
+def get_acp_dataframe(df: pd.DataFrame) -> None:
+    X = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
 
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
@@ -104,6 +104,57 @@ def get_acp_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     ax.set_zlabel(df_acp.columns[2])
     plt.show()
 
-    return df_acp
-def get_data_between_dates(city: City, date_range: list[str]):
-    return city.df_hours[(city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))]
+    return
+
+def get_data_between_dates(city: City, date_range: list[str]) -> pd.DataFrame:
+    return city.df_hours[
+        (city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))
+    ]
+
+def get_tsne_dataframe(df: pd.DataFrame) -> None:
+    '''t-SNE (t-Distributed Stochastic Neighbor Embedding)'''
+    X = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
+
+    from sklearn.manifold import TSNE
+
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+
+    # --- TSNE 2D ---
+    tsne = TSNE(n_components=2, init='pca', perplexity=15, random_state=0, n_jobs=-1)
+    X_tsne = tsne.fit_transform(X)
+
+    X_tsne = pd.DataFrame(X_tsne, index=df.index, columns=[f'Dim{i + 1}' for i in range(X_tsne.shape[1])])
+    X_tsne['hue'] = df['date'].dt.month_name(locale='French')
+    print(X_tsne.head())
+
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    unique = X_tsne['hue'].unique()
+    palette = dict(zip(unique, sns.color_palette(n_colors=len(unique))))
+    sns.scatterplot(X_tsne, x='Dim1', y='Dim2', hue='hue', palette=palette)
+    plt.show()
+
+    print(tsne.kl_divergence_)
+
+    # --- TSNE 3D ---
+    # tsne = TSNE(n_components=3, init='pca', perplexity=15, random_state=0, n_jobs=-1)
+    # X_tsne = tsne.fit_transform(X)
+
+    # X_tsne = pd.DataFrame(X_tsne, columns=[f'Dim{i + 1}' for i in range(X_tsne.shape[1])])
+    # print(X_tsne.head())
+
+    # import matplotlib.pyplot as plt
+
+    # plt.figure(figsize=(10, 8))
+    # ax = plt.axes(projection="3d")
+    # ax.scatter3D(X_tsne.iloc[:, 0], X_tsne.iloc[:, 1], X_tsne.iloc[:, 2])
+    # ax.set_xlabel(X_tsne.columns[0])
+    # ax.set_ylabel(X_tsne.columns[1])
+    # ax.set_zlabel(X_tsne.columns[2])
+    # plt.show()
+
+    # print(tsne.kl_divergence_)
+
+    return
