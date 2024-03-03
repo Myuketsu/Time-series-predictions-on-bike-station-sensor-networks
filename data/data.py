@@ -105,3 +105,5 @@ def get_acp_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     plt.show()
 
     return df_acp
+def get_data_between_dates(city: City, date_range: list[str]):
+    return city.df_hours[(city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))]
