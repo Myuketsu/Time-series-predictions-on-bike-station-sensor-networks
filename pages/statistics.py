@@ -8,8 +8,6 @@ import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
 
-import json
-
 from data.city.load_cities import CITY
 from view.map import viewport_map
 from view import figures
@@ -87,34 +85,29 @@ def menus_map():
         Output('modal-graph', 'is_open'),
         Output('bike-graph', 'figure'),
         Output('box-plot', 'figure'),
-        Output('select_map_statistics', 'value') 
+        Output('select_map_statistics', 'value'),
+        
     ],
     [
-        Input({'type': 'marker', 'code_name': ALL}, 'n_clicks'),
+        Input({'type': 'marker', 'code_name': ALL, 'index': ALL}, 'n_clicks'),
         Input('date_range_picker_map_statistics', 'value'),
         Input('select_map_statistics', 'value')
-    ]
+    ],
+    prevent_initial_call=True
 )
-def display_graph(marker_clicks, date_range, select_value):
-    open_modal = no_update
-    updated_figure_line = no_update
-    updated_figure_box = no_update
-    updated_select_value = no_update 
+def display_graph(n_clicks, date_range, selected_station):
+    triggeredId = ctx.triggered_id
 
-    triggered_id = ctx.triggered[0]['prop_id'] if ctx.triggered else ''
-    triggered_value = ctx.triggered[0]['value'] if ctx.triggered else ''
-
-    if 'marker' in triggered_id and triggered_value:
-        station_id = json.loads(triggered_id.split('.')[0])['code_name']
-        updated_figure_line = figures.bike_distrubution(CITY, station_id, date_range)
-        updated_figure_box = figures.bike_boxplot(CITY, station_id, date_range)
-        open_modal = True
-        updated_select_value = station_id  
-
-    if 'select_map_statistics' in triggered_id and triggered_value:
-        station_id = select_value
-        updated_figure_line = figures.bike_distrubution(CITY, station_id, date_range)
-        updated_figure_box = figures.bike_boxplot(CITY, station_id, date_range)
-        open_modal = True
-
-    return open_modal, updated_figure_line, updated_figure_box, updated_select_value
+    modal_state = no_update
+    line_plot = no_update
+    box_plot = no_update
+    station_value = no_update
+    
+    if (isinstance(triggeredId, dict) and triggeredId['type'] == 'marker') or (triggeredId == 'select_map_statistics'):
+        station_id = triggeredId['code_name'] if isinstance(triggeredId, dict) else selected_station
+        line_plot = figures.bike_distrubution(CITY, station_id, date_range)
+        box_plot = figures.bike_boxplot(CITY, station_id, date_range)
+        modal_state = True
+        station_value = station_id
+    
+    return modal_state, line_plot, box_plot, station_value
