@@ -40,7 +40,7 @@ def histogram(city: City, station: str, date_range: list[str]):
         labels={"value": "Valeur"}
     )
     
-    fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name='Densité', line=dict(color='firebrick', width=2)))
+    fig.add_trace(go.Scatter(x=x, y=y, mode='lines', name='Densité (KDE)', line=dict(color='firebrick', width=2)))
     fig.update_layout(
         xaxis_title="Valeur",
         yaxis_title="Densité de probabilité",
