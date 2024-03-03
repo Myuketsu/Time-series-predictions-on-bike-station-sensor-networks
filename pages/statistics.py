@@ -8,8 +8,6 @@ import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
 
-import json
-
 from data.city.load_cities import CITY
 from view.map import viewport_map
 from view import figures
@@ -29,15 +27,30 @@ def layout():
 def get_modal():
     return dbc.Modal(
         [
-            dbc.ModalHeader(
-                dbc.ModalTitle('Distribution des vélos')
-            ),
+            dbc.ModalHeader(dbc.ModalTitle('Distribution des vélos')),
             dbc.ModalBody(
-                dcc.Graph(figure=figures.create_empty_graph(), id='bike-graph')
+                [
+                    dbc.Tabs(
+                        [
+                            dbc.Tab(
+                                dcc.Graph(figure=figures.create_empty_graph(), id='bike-graph'),
+                                label="Graphique Linéaire",
+                                tab_id="tab-line-chart",
+                            ),
+                            dbc.Tab(
+                                dcc.Graph(figure=figures.create_empty_graph(), id='box-plot'),
+                                label="Box Plot",
+                                tab_id="tab-box-plot",
+                            ),
+                        ],
+                        id="tabs",
+                        active_tab="tab-line-chart",
+                    )
+                ]
             )
         ],
         id='modal-graph',
-        is_open=False, 
+        is_open=False,
         size='xl'
     )
 
@@ -70,18 +83,31 @@ def menus_map():
 @callback(
     [
         Output('modal-graph', 'is_open'),
-        Output('bike-graph', 'figure')
+        Output('bike-graph', 'figure'),
+        Output('box-plot', 'figure'),
+        Output('select_map_statistics', 'value'),
+        
     ],
     [
-        Input({'type': 'marker', 'code_name': ALL}, 'n_clicks')
-    ]
+        Input({'type': 'marker', 'code_name': ALL, 'index': ALL}, 'n_clicks'),
+        Input('date_range_picker_map_statistics', 'value'),
+        Input('select_map_statistics', 'value')
+    ],
+    prevent_initial_call=True
 )
-def display_graph(n_clicks):
-    if n_clicks is None or not any(n_clicks):
-        return no_update, no_update
-    
-    station_id = ctx.triggered[0]['prop_id'].split('.')[0]
-    code_name = json.loads(station_id)['code_name']
-    figure = figures.bike_distrubution(CITY, code_name)
+def display_graph(n_clicks, date_range, selected_station):
+    triggeredId = ctx.triggered_id
 
-    return True, figure
+    modal_state = no_update
+    line_plot = no_update
+    box_plot = no_update
+    station_value = no_update
+    
+    if (isinstance(triggeredId, dict) and triggeredId['type'] == 'marker') or (triggeredId == 'select_map_statistics'):
+        station_id = triggeredId['code_name'] if isinstance(triggeredId, dict) else selected_station
+        line_plot = figures.bike_distrubution(CITY, station_id, date_range)
+        box_plot = figures.bike_boxplot(CITY, station_id, date_range)
+        modal_state = True
+        station_value = station_id
+    
+    return modal_state, line_plot, box_plot, station_value

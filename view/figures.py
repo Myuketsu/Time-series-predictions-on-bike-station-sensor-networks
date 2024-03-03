@@ -4,19 +4,27 @@ import plotly.graph_objects as go
 import pandas as pd
 
 from data.city.load_cities import City
+from data.data import get_data_between_dates
 
 def create_empty_graph(title: str=''):
     return px.line(None, title=title)
 
-def bike_distrubution(city: City, station: str):
+def bike_distrubution(city: City, station: str, date_range: list[str]):
     return px.line(
-        data_frame=city.df_hours,
+        data_frame=get_data_between_dates(city, date_range),
         x='date',
         y=station,
         title=f"Distribution des vélos dans la station {station}",
         template="seaborn"
     )
 
+def bike_boxplot(city: City, station: str, date_range: list[str]):
+    return px.box(
+        data_frame=get_data_between_dates(city, date_range),
+        x=station,
+        title=f"Boîte à moustache de la station {station}",
+        template="seaborn"
+    )
 def correlation_plot(df: pd.DataFrame):
     df_splited = df.T.columns.str.split('-', n=1, expand=True)
     codes_columns = df_splited.get_level_values(0)
