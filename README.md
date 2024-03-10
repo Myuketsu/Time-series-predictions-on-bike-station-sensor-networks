@@ -2,6 +2,7 @@
 
 ## Partie analyse de données 
 
+- [x] Faire une TODO list
 - [ ] Nettoyer les données
 - [ ] Créer DF_mean_by_hours
 - [ ] Faire des graphiques pour DF_mean_by_hours
