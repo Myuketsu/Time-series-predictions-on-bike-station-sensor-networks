@@ -13,6 +13,10 @@ df = pd.read_csv(
 )
 df['date'] = pd.date_range(*DATE_RANGE, freq='1h')[:len(df)]
 
+df.set_index('date', inplace=True)
+df_mean_by_hour = df.groupby(df.index.hour).mean()
+
 from data.data import get_acp_dataframe, get_tsne_dataframe
-get_acp_dataframe(df)
+get_acp_dataframe(df_mean_by_hour.T)
+
 # get_tsne_dataframe(df)

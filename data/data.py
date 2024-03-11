@@ -42,7 +42,7 @@ def get_acp_dataframe(df: pd.DataFrame) -> None:
     scaler = StandardScaler()
     X = scaler.fit_transform(X_selected)
 
-    pca = PCA(n_components=80)
+    pca = PCA()
     X_pca = pca.fit_transform(X)
 
     # --- VARIANCE EXPLIQUEE ---
@@ -106,6 +106,26 @@ def get_acp_dataframe(df: pd.DataFrame) -> None:
     ax.set_xlabel(df_acp.columns[0])
     ax.set_ylabel(df_acp.columns[1])
     ax.set_zlabel(df_acp.columns[2])
+    plt.show()
+    
+    # --- PLOT DES CONTRIBUTIONS DE W1 ET W2 ---
+    plt.figure(figsize=(14, 7))
+
+    # Plot pour w1
+    plt.subplot(1, 2, 1)
+    plt.plot(pca.components_[0], marker='o', linestyle='-', color='r')
+    plt.xticks(ticks=range(len(feature_names)), labels=feature_names, rotation=90)
+    plt.title('Contribution des caractéristiques à w1 (PC1)')
+    plt.grid(True)
+
+    # Plot pour w2
+    plt.subplot(1, 2, 2)
+    plt.plot(pca.components_[1], marker='o', linestyle='-', color='g')
+    plt.xticks(ticks=range(len(feature_names)), labels=feature_names, rotation=90)
+    plt.title('Contribution des caractéristiques à w2 (PC2)')
+    plt.grid(True)
+
+    plt.tight_layout()
     plt.show()
 
     return
