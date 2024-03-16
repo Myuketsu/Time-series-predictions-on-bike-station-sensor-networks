@@ -16,10 +16,10 @@ def radar_chart_distribution(city: City, station: str):
     data.columns = ['Mois', 'Valeur']
     mois_noms = {1: 'Janvier', 2: 'Février', 3: 'Mars', 4: 'Avril', 5: 'Mai', 6: 'Juin', 7: 'Juillet', 8: 'Août', 9: 'Septembre', 10: 'Octobre', 11: 'Novembre', 12: 'Décembre'}
     data['Mois'] = data['Mois'].map(mois_noms)
-    data['Valeur'] = pd.to_numeric(data['Valeur'], errors='coerce')
+    data['Valeur'] = pd.to_numeric(data['Valeur'], errors='coerce')  
 
     fig = px.line_polar(data, r='Valeur', theta='Mois', line_close=True,
-                        range_r=[0,1],
+                        range_r=[0,1], template="seaborn",
                         title=f'Radar Chart pour la station {station}')
     
     return fig
@@ -38,25 +38,13 @@ def bike_distrubution(city: City, station: str, date_range: list[str]):
     station_name = re.sub(r'\d+', '', station_name)
     station_name = ' '.join(station_name.split())
     station_name = station_name.capitalize()
-    
-    # Obtenez les données de la station spécifique
-    data = get_data(city)
-    if station in data.columns:
-        station_data = data[station]
-    else:
-        # Gérer le cas où la station spécifiée n'est pas présente dans les données
-        raise ValueError(f"La station {station} n'est pas présente dans les données.")
-    
-    # Tracer le graphique
-    fig = px.line(
-        data_frame=station_data,
-        x=station_data.index,  # Utilisez l'index comme axe x
-        y=station_data.values,  # Utilisez les valeurs de la station comme axe y
+    return px.line(
+        data_frame=get_data_between_dates(city, date_range),
+        x='date',
+        y=station,
         title=f"Distribution des vélos dans la station : {station_name}",
         template="seaborn"
     )
-    return fig
-
 
 #def bike_boxplot(city: City, station: str, date_range: list[str]):
 #    return px.box(
