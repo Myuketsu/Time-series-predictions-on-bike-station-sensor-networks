@@ -10,31 +10,6 @@ from data.data import get_data_between_dates, compute_kde, get_data
 def create_empty_graph(title: str=''):
     return px.line(None, title=title)
 
-def radar_chart_distribution(city: City, station: str):
-    data = get_data(city)
-    fig = px.line_polar(
-        data_frame=data,
-        theta=data.index,
-        r=station,
-        line_close=True,
-        title=f"Distribution des vélos dans la station {station}",
-        template="seaborn"
-    )
-    fig.update_traces(fill='toself')
-    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])))
-    print(data)
-    return fig
-
-
-#def bike_distrubution(city: City, station: str, date_range: list[str]):
-#    return px.line(
-#        data_frame=get_data_between_dates(city, date_range),
-#        x='date',
-#        y=station,
-#       title=f"Distribution des vélos dans la station {station}",
-#        template="seaborn"
-#    )
-
 def bike_distrubution(city: City, station: str, date_range: list[str]):
     station_name = station.replace('-', ' ')
     station_name = re.sub(r'\d+', '', station_name)
@@ -59,6 +34,29 @@ def bike_distrubution(city: City, station: str, date_range: list[str]):
     )
     return fig
 
+
+
+#def bike_distrubution(city: City, station: str, date_range: list[str]):
+#    return px.line(
+#        data_frame=get_data_between_dates(city, date_range),
+#        x='date',
+#        y=station,
+#       title=f"Distribution des vélos dans la station {station}",
+#        template="seaborn"
+#    )
+
+def bike_distrubution(city: City, station: str, date_range: list[str]):
+    station_name = station.replace('-', ' ')
+    station_name = re.sub(r'\d+', '', station_name)
+    station_name = ' '.join(station_name.split())
+    station_name = station_name.capitalize()
+    return px.line(
+        data_frame=get_data_between_dates(city, date_range),
+        x='date',
+        y=station,
+        title=f"Distribution des vélos dans la station : {station_name}",
+        template="seaborn"
+    )
 
 #def bike_boxplot(city: City, station: str, date_range: list[str]):
 #    return px.box(
