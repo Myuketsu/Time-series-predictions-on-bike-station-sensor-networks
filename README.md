@@ -11,3 +11,10 @@
 - [ ] Faire une carte des correlations par station
 
 ## Partie machine learning
+
+- [ ] Trouver des algos de machine learning pour notre presentation de mi-semestre (Regression Linearire etc...)
+
+## Rendu
+
+- [ ] Commencer le rapport en LaTeX sur overleaf
+- [ ] Faire une diapo pour notre presenttaion de mi-semestre
