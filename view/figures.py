@@ -10,30 +10,19 @@ from data.data import get_data_between_dates, compute_kde, get_data
 def create_empty_graph(title: str=''):
     return px.line(None, title=title)
 
-def bike_distrubution(city: City, station: str, date_range: list[str]):
-    station_name = station.replace('-', ' ')
-    station_name = re.sub(r'\d+', '', station_name)
-    station_name = ' '.join(station_name.split())
-    station_name = station_name.capitalize()
-    
-    # Obtenez les données de la station spécifique
+def radar_chart_distribution(city: City, station: str):
     data = get_data(city)
-    if station in data.columns:
-        station_data = data[station]
-    else:
-        # Gérer le cas où la station spécifiée n'est pas présente dans les données
-        raise ValueError(f"La station {station} n'est pas présente dans les données.")
-    
-    # Tracer le graphique
-    fig = px.line(
-        data_frame=station_data,
-        x=station_data.index,  # Utilisez l'index comme axe x
-        y=station_data.values,  # Utilisez les valeurs de la station comme axe y
-        title=f"Distribution des vélos dans la station : {station_name}",
+    fig = px.line_polar(
+        data_frame=data,
+        theta=data.index,
+        r=station,
+        line_close=True,
+        title=f"Distribution des vélos dans la station {station}",
         template="seaborn"
     )
+    fig.update_traces(fill='toself')
+    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])))
     return fig
-
 
 
 #def bike_distrubution(city: City, station: str, date_range: list[str]):
