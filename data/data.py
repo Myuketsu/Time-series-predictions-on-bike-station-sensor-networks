@@ -36,7 +36,7 @@ def get_data(city: City):
     df.set_index('date', inplace=True)
     df_mean_by_month = df.groupby(df.index.month).mean()
     df_mean_by_month= df_mean_by_month.astype(str)
-    return df_mean_by_month.T
+    return df_mean_by_month
 
 
 def check_if_station_in_polygon(city: City, geojson) -> list:

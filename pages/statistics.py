@@ -127,4 +127,4 @@ def display_graph(n_clicks, date_range, selected_station):
         modal_state = True
         station_value = station_id
     
-    return modal_state, line_plot, box_plot, histogram, station_value,radar_chart
+    return modal_state, line_plot, box_plot, histogram, station_value, radar_chart

@@ -12,19 +12,17 @@ def create_empty_graph(title: str=''):
 
 def radar_chart_distribution(city: City, station: str):
     data = get_data(city)
-    fig = px.line_polar(
-        data_frame=data,
-        theta=data.index,
-        r=station,
-        line_close=True,
-        title=f"Distribution des vélos dans la station {station}",
-        template="seaborn"
-    )
-    fig.update_traces(fill='toself')
-    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 1])))
-    print(data)
-    return fig
+    data = data[station].reset_index()
+    data.columns = ['Mois', 'Valeur']
+    mois_noms = {1: 'Janvier', 2: 'Février', 3: 'Mars', 4: 'Avril', 5: 'Mai', 6: 'Juin', 7: 'Juillet', 8: 'Août', 9: 'Septembre', 10: 'Octobre', 11: 'Novembre', 12: 'Décembre'}
+    data['Mois'] = data['Mois'].map(mois_noms)
+    data['Valeur'] = pd.to_numeric(data['Valeur'], errors='coerce')
 
+    fig = px.line_polar(data, r='Valeur', theta='Mois', line_close=True,
+                        range_r=[0,1],
+                        title=f'Radar Chart pour la station {station}')
+    
+    return fig
 
 #def bike_distrubution(city: City, station: str, date_range: list[str]):
 #    return px.line(
