@@ -31,6 +31,14 @@ def get_correlation_on_selected_stations(city: City, columns: list[str], ordered
 def get_data_between_dates(city: City, date_range: list[str]):
     return city.df_hours[(city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))]
 
+def get_data(city: City):
+    df=city.df_hours
+    df.set_index('date', inplace=True)
+    df_mean_by_month = df.groupby(df.index.month).mean()
+    df_mean_by_month= df_mean_by_month.astype(str)
+    return df_mean_by_month.T
+
+
 def check_if_station_in_polygon(city: City, geojson) -> list:
     polygon: shapely.Polygon = shapely.from_geojson(dumps(geojson)).geoms[-1]
     get_station_inside = city.df_coordinates.apply(lambda row: shapely.Point(row['longitude'], row['latitude']).within(polygon), axis=1)

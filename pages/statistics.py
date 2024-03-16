@@ -47,6 +47,11 @@ def get_modal():
                                 label="Histogramme",
                                 tab_id="tab-histogram",
                             ),
+                            dbc.Tab(
+                                dcc.Graph(figure=figures.create_empty_graph(), id='radar-chart'),
+                                label="Radar-chart",
+                                tab_id="tab-radar-chart",
+                            ),
                         ],
                         id="tabs",
                         active_tab="tab-line-chart",
@@ -58,6 +63,7 @@ def get_modal():
         is_open=False,
         size='xl'
     )
+
 
 def menus_map():
     codes_names_list = CITY.df_coordinates['code_name'].to_list()
@@ -92,6 +98,7 @@ def menus_map():
         Output('box-plot', 'figure'),
         Output('histogram', 'figure'),
         Output('select_map_statistics', 'value'),
+        Output('radar-chart','figure'),
         
     ],
     [
@@ -109,13 +116,15 @@ def display_graph(n_clicks, date_range, selected_station):
     box_plot = no_update
     histogram = no_update
     station_value = no_update
+    radar_chart = no_update
     
     if (isinstance(triggeredId, dict) and triggeredId['type'] == 'marker') or (triggeredId == 'select_map_statistics'):
         station_id = triggeredId['code_name'] if isinstance(triggeredId, dict) else selected_station
         line_plot = figures.bike_distrubution(CITY, station_id, date_range)
         box_plot = figures.bike_boxplot(CITY, station_id, date_range)
         histogram = figures.histogram(CITY, station_id, date_range)
+        radar_chart=figures.radar_chart_distribution(CITY,station_id)
         modal_state = True
         station_value = station_id
     
-    return modal_state, line_plot, box_plot, histogram, station_value
+    return modal_state, line_plot, box_plot, histogram, station_value,radar_chart
