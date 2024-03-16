@@ -2,6 +2,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 import pandas as pd
+import re
 
 from data.city.load_cities import City
 from data.data import get_data_between_dates, compute_kde
@@ -9,31 +10,61 @@ from data.data import get_data_between_dates, compute_kde
 def create_empty_graph(title: str=''):
     return px.line(None, title=title)
 
+#def bike_distrubution(city: City, station: str, date_range: list[str]):
+#    return px.line(
+#        data_frame=get_data_between_dates(city, date_range),
+#        x='date',
+#        y=station,
+#       title=f"Distribution des vélos dans la station {station}",
+#        template="seaborn"
+#    )
+
 def bike_distrubution(city: City, station: str, date_range: list[str]):
+    station_name = station.replace('-', ' ')
+    station_name = re.sub(r'\d+', '', station_name)
+    station_name = ' '.join(station_name.split())
+    station_name = station_name.capitalize()
     return px.line(
         data_frame=get_data_between_dates(city, date_range),
         x='date',
         y=station,
-        title=f"Distribution des vélos dans la station {station}",
+        title=f"Distribution des vélos dans la station : {station_name}",
         template="seaborn"
     )
 
+#def bike_boxplot(city: City, station: str, date_range: list[str]):
+#    return px.box(
+#        data_frame=get_data_between_dates(city, date_range),
+#        x=station,
+#        title=f"Boîte à moustache de la station : {station}",
+#        template="seaborn"
+#   )
+
 def bike_boxplot(city: City, station: str, date_range: list[str]):
+    # Mettre une majuscule au début de la station
+    station_name = station.replace('-', ' ')
+    station_name = re.sub(r'\d+', '', station_name)
+    station_name = ' '.join(station_name.split())
+    station_name = station_name.capitalize()
     return px.box(
         data_frame=get_data_between_dates(city, date_range),
         x=station,
-        title=f"Boîte à moustache de la station {station}",
+        title=f"Boîte à moustache de la station : {station_name}",
         template="seaborn"
     )
   
 def histogram(city: City, station: str, date_range: list[str]):
     df_filtered = get_data_between_dates(city, date_range)
     x, y = compute_kde(df_filtered, station)
+    station_name = station.replace('-', ' ')
+    station_name = re.sub(r'\d+', '', station_name)
+    station_name = ' '.join(station_name.split())
+    station_name = station_name.capitalize()
     fig = px.histogram(
         df_filtered,
         x=station,
         nbins=int(1 / 0.05) - 1,
-        title=f"Histogramme et densité de la station {station}",
+        title=f"Histogramme et densité de la station : {station_name}",
         template="seaborn",
         histnorm='probability density',
         range_x=[0, 1],
