@@ -46,6 +46,13 @@ def get_data_month_all(city: City):
     df_mean_by_month = df_mean_by_month.astype(str)
     return df_mean_by_month['mean_by_row']
 
+def get_data_mean_hour(city: City):
+    df = city.df_hours
+    df.set_index('date', inplace=True)
+    df_mean_by_hour = df.groupby(df.index.hour).mean()
+    df_mean_by_hour['total_mean'] = df_mean_by_hour.mean(axis=1)
+    return df_mean_by_hour
+
 def check_if_station_in_polygon(city: City, geojson) -> list:
     polygon: shapely.Polygon = shapely.from_geojson(dumps(geojson)).geoms[-1]
     get_station_inside = city.df_coordinates.apply(lambda row: shapely.Point(row['longitude'], row['latitude']).within(polygon), axis=1)

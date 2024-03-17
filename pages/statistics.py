@@ -52,6 +52,11 @@ def get_modal():
                                 label="Radar-chart",
                                 tab_id="tab-radar-chart",
                             ),
+                            dbc.Tab(
+                                dcc.Graph(figure=figures.create_empty_graph(), id='graph_mean_hour'),
+                                label="Moyenne par heure",
+                                tab_id="tab-mean-hour",
+                            ),
                         ],
                         id="tabs",
                         active_tab="tab-line-chart",
@@ -99,6 +104,7 @@ def menus_map():
         Output('histogram', 'figure'),
         Output('select_map_statistics', 'value'),
         Output('radar-chart','figure'),
+        Output('graph_mean_hour','figure')
         
     ],
     [
@@ -117,6 +123,7 @@ def display_graph(n_clicks, date_range, selected_station):
     histogram = no_update
     station_value = no_update
     radar_chart = no_update
+    graph_mean_hour = no_update
     
     if (isinstance(triggeredId, dict) and triggeredId['type'] == 'marker') or (triggeredId == 'select_map_statistics'):
         station_id = triggeredId['code_name'] if isinstance(triggeredId, dict) else selected_station
@@ -124,7 +131,8 @@ def display_graph(n_clicks, date_range, selected_station):
         box_plot = figures.bike_boxplot(CITY, station_id, date_range)
         histogram = figures.histogram(CITY, station_id, date_range)
         radar_chart=figures.radar_chart_distribution(CITY,station_id)
+        graph_mean_hour=figures.bike_distrution_mean_hour(CITY,station_id)
         modal_state = True
         station_value = station_id
     
-    return modal_state, line_plot, box_plot, histogram, station_value, radar_chart
+    return modal_state, line_plot, box_plot, histogram, station_value, radar_chart, graph_mean_hour

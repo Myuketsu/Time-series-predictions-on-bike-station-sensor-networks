@@ -5,7 +5,7 @@ import pandas as pd
 import re
 
 from data.city.load_cities import City
-from data.data import get_data_between_dates, compute_kde, get_data_month,get_data_month_all
+from data.data import get_data_between_dates, compute_kde, get_data_month, get_data_month_all, get_data_mean_hour
 
 def create_empty_graph(title: str=''):
     return px.line(None, title=title)
@@ -77,6 +77,28 @@ def bike_distrubution(city: City, station: str, date_range: list[str]):
         title=f"Distribution des vélos dans la station : {station_name}",
         template="seaborn"
     )
+    
+def bike_distrution_mean_hour(city: City, station: str):
+    data = get_data_mean_hour(city)
+    fig = px.line(
+        data_frame=data,
+        x=data.index,
+        y=station,
+        title=f"Distribution des vélos dans la station : {station}",
+        template="seaborn",
+    )
+    fig.add_scatter(
+        x=data.index, 
+        y=data['total_mean'],
+        mode='lines',
+        name='Moyenne des stations',
+    )
+    fig.update_layout(
+        xaxis_title="Heure",
+        yaxis_title="Proportion de vélos disponibles",
+        yaxis=dict(range=[0, 1]),
+    )
+    return fig
 
 #def bike_boxplot(city: City, station: str, date_range: list[str]):
 #    return px.box(
