@@ -5,24 +5,56 @@ import pandas as pd
 import re
 
 from data.city.load_cities import City
-from data.data import get_data_between_dates, compute_kde, get_data
+from data.data import get_data_between_dates, compute_kde, get_data_month,get_data_month_all
 
 def create_empty_graph(title: str=''):
     return px.line(None, title=title)
 
 def radar_chart_distribution(city: City, station: str):
-    data = get_data(city)
-    data = data[station].reset_index()
-    data.columns = ['Mois', 'Valeur']
+    station_name = station.replace('-', ' ')
+    station_name = re.sub(r'\d+', '', station_name)
+    station_name = ' '.join(station_name.split())
+    station_name = station_name.capitalize()
+    data_station = get_data_month(city)
+    data_station = data_station[station].reset_index()
+    data_station.columns = ['Mois', 'Valeur']
     mois_noms = {1: 'Janvier', 2: 'Février', 3: 'Mars', 4: 'Avril', 5: 'Mai', 6: 'Juin', 7: 'Juillet', 8: 'Août', 9: 'Septembre', 10: 'Octobre', 11: 'Novembre', 12: 'Décembre'}
-    data['Mois'] = data['Mois'].map(mois_noms)
-    data['Valeur'] = pd.to_numeric(data['Valeur'], errors='coerce')  
+    data_station['Mois'] = data_station['Mois'].map(mois_noms)
+    data_station['Valeur'] = pd.to_numeric(data_station['Valeur'], errors='coerce')  
 
-    fig = px.line_polar(data, r='Valeur', theta='Mois', line_close=True,
+    data_all = get_data_month_all(city)
+    data_all = data_all.reset_index()
+    data_all.columns = ['Mois', 'Valeur']
+    data_all['Mois'] = data_all['Mois'].map(mois_noms)
+    data_all['Valeur'] = pd.to_numeric(data_all['Valeur'], errors='coerce')  
+
+    fig = px.line_polar(data_station, r='Valeur', theta='Mois', line_close=True,
                         range_r=[0,1], template="seaborn",
-                        title=f'Radar Chart pour la station {station}')
+                        title=f'Radar Chart pour la station {station_name}')
     
+    fig2 = px.line_polar(data_all, r='Valeur', theta='Mois', line_close=True,
+                        range_r=[0,1], template="seaborn", color_discrete_sequence=['red'])
+    for trace in fig2['data']:
+        fig.add_trace(trace)
+
+    fig.add_trace(
+        go.Scatterpolar(
+            r=data_all['Valeur'],
+            theta=data_all['Mois'],
+            mode='lines',
+            name='Toutes les stations réunies',
+            line=dict(color='red')  # Couleur de la ligne pour toutes les stations réunies
+        )
+    )
+
+    fig.add_annotation(
+        x=1, y=1,
+        xref='paper', yref='paper',
+        text=f'Station: {station_name}',
+        showarrow=False
+    )
     return fig
+
 
 #def bike_distrubution(city: City, station: str, date_range: list[str]):
 #    return px.line(
