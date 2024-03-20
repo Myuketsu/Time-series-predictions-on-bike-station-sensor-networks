@@ -19,8 +19,6 @@ import view.map as map
 register_page(__name__, path='/correlation', name='Correlation', title='TER', order=3,
               category='Statistique Descriptive', icon='arcticons:cpustats')
 
-selected_station_store = dcc.Store(id='selected_station_store', data={'selected_station': '00001-poids-de-lhuile'})
-
 def layout():
     switch = dmc.Switch(
         id='mode_switch',
@@ -34,7 +32,7 @@ def layout():
         [
             switch,
             content_container, 
-            selected_station_store,
+            dcc.Store(id='selected_station_store', data={'selected_station': '00001-poids-de-lhuile'}),
             dcc.Store(id='correlation_data_store', data={})
         ],
         id='correlation_layout'
@@ -196,14 +194,13 @@ def toggle_mode(checked, data):
             [
                 map.viewport_map(
                     CITY, 'viewport_on_map_correlation', 
-                    circle_mode=bool(selected_station),  # Active circle_mode si une station est sélectionnée
+                    circle_mode=bool(selected_station), 
                     selected_station=selected_station
                 ),
             ],
             id='correlation_on_map'
         )
     else:
-        # Retournez le contenu actuel de la page pour le mode par défaut
         return html.Div(
             [
                 map.viewport_map(CITY, 'viewport_map_correlation', True, 'red'),
