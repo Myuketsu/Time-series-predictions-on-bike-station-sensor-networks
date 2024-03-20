@@ -212,7 +212,7 @@ def toggle_mode(checked, data):
             id='correlation_layout'
         )
 
-# Callback pour écouter les clics sur les marqueurs
+
 @callback(
     Output('selected_station_store', 'data'),
     [Input({'type': 'circle_marker', 'code_name': ALL, 'index': ALL}, 'n_clicks')],
@@ -234,17 +234,13 @@ def on_marker_click(n_clicks):
 def update_correlation_data(selected_station_data):
     selected_station = selected_station_data['selected_station']
     correlations = calculate_correlations(CITY, selected_station)
-    print(correlations)
     return correlations 
 
 @callback(
-    Output('viewport_on_map_correlation', 'children'),  # Assurez-vous que cet ID correspond à votre dl.Map
+    Output('viewport_on_map_correlation', 'children'),  
     [Input('correlation_data_store', 'data'), Input('selected_station_store', 'data')]
 )
 def update_markers(correlation_data, station_data):
     selected_station = station_data['selected_station']
-    # Reconstruisez vos marqueurs ici en utilisant correlation_data pour définir les couleurs
-    markers = map.get_map_children(CITY, circle_mode=True ,selected_station=selected_station)
-    # Assurez-vous d'inclure les autres enfants de la carte nécessaires (comme dl.TileLayer)
-    return markers
+    return map.get_map_children(CITY, circle_mode=True ,selected_station=selected_station)
 

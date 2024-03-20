@@ -84,7 +84,6 @@ def viewport_map(city: City, id: str, has_edit_control: bool=False, default_mark
         id=id
     )
 
-
 def get_correlation_markers(city: City, selected_station: str) -> list[dl.CircleMarker]:
     correlations = calculate_correlations(city, selected_station)
     
@@ -104,13 +103,13 @@ def get_correlation_markers(city: City, selected_station: str) -> list[dl.Circle
                 dl.Tooltip(f"{row['code_name']}: Corrélation {correlations[row['code_name']]:.2f}")
             ],
             id={'type': 'circle_marker', 'code_name': row['code_name'], 'index': index},
-            radius=8,  # Vous pouvez ajuster la taille du cercle ici
-            color='black',  # Couleur du contour
+            radius=8,  
+            color='black',  
             fill=True,
             fillColor=correlation_color(correlations[row['code_name']]),  # Couleur de remplissage basée sur la corrélation
-            fillOpacity=0.7,  # Transparence du remplissage
+            fillOpacity=0.7,  
             stroke=True,
-            weight=1,  # Épaisseur du contour
+            weight=1,  
             n_clicks=0
         ) for index, row in city.df_coordinates.iterrows()
     ]
