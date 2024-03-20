@@ -28,6 +28,17 @@ def get_correlation_on_selected_stations(city: City, columns: list[str], ordered
 
     return df_corr.mask(mask)
 
+def calculate_correlations(city: City, selected_station: str):
+    correlations = {}
+    selected_station_data = city.df_hours[selected_station]
+    
+    for station in city.df_hours.columns:
+        if station == selected_station:
+            correlations[station] = 1
+        correlation = selected_station_data.corr(city.df_hours[station])
+        correlations[station] = correlation
+    return correlations
+
 def get_data_between_dates(city: City, date_range: list[str]):
     return city.df_hours[(city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))]
 

@@ -3,12 +3,15 @@ from dash import html, dcc, Input, Output, State
 from dash import register_page, callback
 from dash import ctx, no_update, ALL
 
+import json
+
 # Dash extensions
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
 
 from data.city.load_cities import CITY
+from data.data import calculate_correlations
 import data.data as data
 import view.figures as figures
 import view.map as map
@@ -16,14 +19,27 @@ import view.map as map
 register_page(__name__, path='/correlation', name='Correlation', title='TER', order=3,
               category='Statistique Descriptive', icon='arcticons:cpustats')
 
+selected_station_store = dcc.Store(id='selected_station_store', data={'selected_station': '00001-poids-de-lhuile'})
+
 def layout():
+    switch = dmc.Switch(
+        id='mode_switch',
+        checked=False, 
+        style={'position': 'absolute', 'top': 90, 'left': 10, 'zIndex': 1000}
+    )
+    
+    content_container = html.Div(id='content_container')
+
     return html.Div(
         [
-            map.viewport_map(CITY, 'viewport_map_correlation', True, 'red'),
-            select_and_plot()
+            switch,
+            content_container, 
+            selected_station_store,
+            dcc.Store(id='correlation_data_store', data={})
         ],
         id='correlation_layout'
     )
+
 
 def select_and_plot():
     initial_values_codes_names = [[], [
@@ -166,3 +182,69 @@ def switch_station_transferlist(geojson, transferlist_value: list[list[dict]]):
     for station in station_to_switch:
         transferlist_value = update_transferlist(transferlist_value, station)
     return transferlist_value
+
+
+@callback(
+    Output('content_container', 'children'),
+    Input('mode_switch', 'checked'),
+    State('selected_station_store', 'data')
+)
+def toggle_mode(checked, data):
+    if checked:
+        selected_station = data.get('selected_station')
+        return html.Div(
+            [
+                map.viewport_map(
+                    CITY, 'viewport_on_map_correlation', 
+                    circle_mode=bool(selected_station),  # Active circle_mode si une station est sélectionnée
+                    selected_station=selected_station
+                ),
+            ],
+            id='correlation_on_map'
+        )
+    else:
+        # Retournez le contenu actuel de la page pour le mode par défaut
+        return html.Div(
+            [
+                map.viewport_map(CITY, 'viewport_map_correlation', True, 'red'),
+                select_and_plot()
+            ],
+            id='correlation_layout'
+        )
+
+# Callback pour écouter les clics sur les marqueurs
+@callback(
+    Output('selected_station_store', 'data'),
+    [Input({'type': 'circle_marker', 'code_name': ALL, 'index': ALL}, 'n_clicks')],
+    prevent_initial_call=True
+)
+def on_marker_click(n_clicks):
+    if not ctx.triggered:
+        return no_update
+
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    selected_station = json.loads(button_id)['code_name']
+
+    return {'selected_station': selected_station}
+
+@callback(
+    Output('correlation_data_store', 'data'),
+    [Input('selected_station_store', 'data')]
+)
+def update_correlation_data(selected_station_data):
+    selected_station = selected_station_data['selected_station']
+    correlations = calculate_correlations(CITY, selected_station)
+    print(correlations)
+    return correlations 
+
+@callback(
+    Output('viewport_on_map_correlation', 'children'),  # Assurez-vous que cet ID correspond à votre dl.Map
+    [Input('correlation_data_store', 'data'), Input('selected_station_store', 'data')]
+)
+def update_markers(correlation_data, station_data):
+    selected_station = station_data['selected_station']
+    # Reconstruisez vos marqueurs ici en utilisant correlation_data pour définir les couleurs
+    markers = map.get_map_children(CITY, circle_mode=True ,selected_station=selected_station)
+    # Assurez-vous d'inclure les autres enfants de la carte nécessaires (comme dl.TileLayer)
+    return markers
+
