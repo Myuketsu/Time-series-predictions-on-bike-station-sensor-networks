@@ -2,8 +2,7 @@
 from dash import html, dcc, Input, Output, State
 from dash import register_page, callback
 from dash import ctx, no_update, ALL
-
-import json
+from dash.exceptions import PreventUpdate
 
 # Dash extensions
 import dash_bootstrap_components as dbc
@@ -11,10 +10,11 @@ import dash_mantine_components as dmc
 from dash_iconify import DashIconify
 
 from data.city.load_cities import CITY
-from data.data import calculate_correlations
 import data.data as data
 import view.figures as figures
 import view.map as map
+
+import json
 
 register_page(__name__, path='/correlation', name='Correlation', title='TER', order=3,
               category='Statistique Descriptive', icon='arcticons:cpustats')
@@ -22,8 +22,11 @@ register_page(__name__, path='/correlation', name='Correlation', title='TER', or
 def layout():
     switch = dmc.Switch(
         id='mode_switch',
+        offLabel=DashIconify(icon="charm:chart-line", width=20),
+        onLabel=DashIconify(icon="charm:circle", width=20),
         checked=False, 
-        style={'position': 'absolute', 'top': 90, 'left': 10, 'zIndex': 1000}
+        style={'position': 'absolute', 'top': 90, 'left': 10, 'zIndex': 1000},
+        size='lg'
     )
     
     content_container = html.Div(id='content_container')
@@ -33,7 +36,6 @@ def layout():
             switch,
             content_container, 
             dcc.Store(id='selected_station_store', data={'selected_station': '00001-poids-de-lhuile'}),
-            dcc.Store(id='correlation_data_store', data={})
         ],
         id='correlation_layout'
     )
@@ -211,33 +213,32 @@ def toggle_mode(checked, data):
 
 
 @callback(
-    Output('selected_station_store', 'data'),
-    [Input({'type': 'circle_marker', 'code_name': ALL, 'index': ALL}, 'n_clicks')],
+    [
+        Output('selected_station_store', 'data'),
+        Output('viewport_on_map_correlation', 'key'),  
+        Output('viewport_on_map_correlation', 'children'),  
+    ],
+    [
+        Input({'type': 'circle_marker', 'code_name': ALL, 'index': ALL}, 'n_clicks'),  
+    ],
+    [
+        State('selected_station_store', 'data'), 
+        State('viewport_on_map_correlation', 'key'),  
+    ],
     prevent_initial_call=True
 )
-def on_marker_click(n_clicks):
+def update_on_circle_marker_click(n_clicks, selected_station_state, map_key):
     if not ctx.triggered:
-        return no_update
+        raise PreventUpdate
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
     selected_station = json.loads(button_id)['code_name']
 
-    return {'selected_station': selected_station}
+    if selected_station_state.get('selected_station') == selected_station:
+        raise PreventUpdate
+    
+    map_children = map.get_map_children(CITY, circle_mode=True, selected_station=selected_station)
+    new_map_key = (map_key or 0) + 1
 
-@callback(
-    Output('correlation_data_store', 'data'),
-    [Input('selected_station_store', 'data')]
-)
-def update_correlation_data(selected_station_data):
-    selected_station = selected_station_data['selected_station']
-    correlations = calculate_correlations(CITY, selected_station)
-    return correlations 
-
-@callback(
-    Output('viewport_on_map_correlation', 'children'),  
-    [Input('correlation_data_store', 'data'), Input('selected_station_store', 'data')]
-)
-def update_markers(correlation_data, station_data):
-    selected_station = station_data['selected_station']
-    return map.get_map_children(CITY, circle_mode=True ,selected_station=selected_station)
+    return {'selected_station': selected_station}, new_map_key, map_children
 
