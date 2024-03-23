@@ -1,6 +1,8 @@
 import dash_leaflet as dl
+import plotly.express as px 
+import numpy as np
 from data.city.load_cities import City
-from data.data import calculate_correlations
+from data.data import calculate_correlations, get_acp
 
 ICONS = {
     'red': {
@@ -51,24 +53,28 @@ def get_edit_control():
         ]
     )
 
-def get_map_children(city: City, markers_distribution: list[list[dict]]={}, has_edit_control: bool=False, default_markers_colors: str='blue', circle_mode: bool=False, selected_station: str=None):
+def get_map_children(city: City, markers_distribution: list[list[dict]]={}, has_edit_control: bool=False, default_markers_colors: str='blue', circle_mode: bool=False, selected_station: str=None, acp_mode: bool=False, index: int=0):
     children = [dl.TileLayer()] # OpenStreetMap par défaut
     if has_edit_control:
         children += [get_edit_control()]
     if circle_mode and selected_station:
         children += get_correlation_markers(city, selected_station)
+    elif acp_mode:
+        children += get_acp_markers(city, index)
     else:
         children += get_markers(city, markers_distribution, default_markers_colors)
     return children
 
-def viewport_map(city: City, id: str, has_edit_control: bool=False, default_markers_colors: str='blue', circle_mode: bool=False, selected_station: str=None):
+def viewport_map(city: City, id: str, has_edit_control: bool=False, default_markers_colors: str='blue', circle_mode: bool=False, selected_station: str=None, acp_mode: bool=False, index: int=0):
     return dl.Map(
         children=get_map_children(
             city=city,
             has_edit_control=has_edit_control,
             default_markers_colors=default_markers_colors,
             circle_mode=circle_mode,
-            selected_station=selected_station
+            selected_station=selected_station,
+            acp_mode=acp_mode,
+            index=index
         ),
         center=city.centroid,
         bounds=city.bounds,
@@ -109,8 +115,39 @@ def get_correlation_markers(city: City, selected_station: str) -> list[dl.Circle
             fillColor=correlation_color(correlations[row['code_name']]),  # Couleur de remplissage basée sur la corrélation
             fillOpacity=0.7,  
             stroke=True,
-            weight=1,  
+            weight=1, 
             n_clicks=0
         ) for index, row in city.df_coordinates.iterrows()
     ]
 
+
+def get_acp_markers(city, index):
+    _, pca, _ = get_acp(city)
+    
+    pca_values = pca.components_[index]
+    
+    # Normalisation des valeurs pour l'echelle de couleur (entre 0 et 1)
+    norm_pca_values = (pca_values - np.min(pca_values)) / (np.max(pca_values) - np.min(pca_values))
+
+    color_scale = px.colors.sequential.Plasma  # Vous pouvez choisir n'importe quelle échelle de couleurs Plotly
+    
+    markers = []
+    for i, row in city.df_coordinates.iterrows():
+        color = px.colors.sample_colorscale(color_scale, norm_pca_values[i])[0]
+        
+        marker = dl.CircleMarker(
+            center=(row['latitude'], row['longitude']),
+            children=[
+                dl.Tooltip(f"{row['code_name']}: {pca_values[i]:.3f}")
+            ],
+            radius=8,  
+            color='black',
+            fill=True,
+            fillColor=color,
+            fillOpacity=0.7,  
+            weight=1,
+            id={"type": "pca_marker", "index": i}
+        )
+        markers.append(marker)
+    
+    return markers

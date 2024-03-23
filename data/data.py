@@ -69,6 +69,22 @@ def check_if_station_in_polygon(city: City, geojson) -> list:
     get_station_inside = city.df_coordinates.apply(lambda row: shapely.Point(row['longitude'], row['latitude']).within(polygon), axis=1)
     return city.df_coordinates[get_station_inside]['code_name'].to_list()
 
+def get_acp(city: City) -> tuple:
+    df = city.df_hours
+    df.set_index('date', inplace=True)
+    df = df.groupby(df.index.hour).mean()
+    X_selected = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
+
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X_selected)
+
+    pca = PCA()
+    X_pca = pca.fit_transform(X)
+    
+    feature_names = X_selected.columns.values
+
+    return X_pca, pca, feature_names
+
 def get_acp_dataframe(df: pd.DataFrame) -> None:
     X_selected = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
 

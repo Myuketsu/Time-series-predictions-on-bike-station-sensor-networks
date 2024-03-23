@@ -2,3 +2,8 @@
     width: 100%;
     padding: 0px 30px;
 }
+
+#viewport_map_acp {
+    height: calc(100vh - var(--navbar_height));
+    width: 100vw;
+}

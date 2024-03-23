@@ -5,7 +5,7 @@ import pandas as pd
 import re
 
 from data.city.load_cities import City
-from data.data import get_data_between_dates, compute_kde, get_data_month, get_data_month_all, get_data_mean_hour
+from data.data import get_data_between_dates, compute_kde, get_data_month, get_data_month_all, get_data_mean_hour, get_acp
 
 def create_empty_graph(title: str=''):
     return px.line(None, title=title)
@@ -178,3 +178,32 @@ def correlation_plot(df: pd.DataFrame):
         margin=dict(l=5, r=5, t=5, b=5)
     )
     return fig
+
+
+import plotly.graph_objects as go
+
+def acp_eigenvectors_plot(city, indices):
+    _, pca, feature_names = get_acp(city)
+    fig = go.Figure()
+
+    colors = px.colors.qualitative.Plotly
+    for i, index in enumerate(indices):
+        color = colors[i % len(colors)]  
+        fig.add_trace(go.Scatter(
+            x=feature_names, 
+            y=pca.components_[index], 
+            mode='lines+markers', 
+            name=f'W{index + 1}',
+            line=dict(color=color)  
+        ))
+    
+    fig.update_layout(
+        title=f'Contribution des caractéristiques aux composantes principales sélectionnées',
+        xaxis=dict(tickangle=90, title='Caractéristiques'),
+        yaxis_title="Contribution",
+        showlegend=True
+    )
+
+    return fig
+
+    
