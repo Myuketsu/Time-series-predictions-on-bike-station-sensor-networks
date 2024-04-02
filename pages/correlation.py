@@ -192,12 +192,14 @@ def switch_station_transferlist(geojson, transferlist_value: list[list[dict]]):
 def toggle_mode(checked, data):
     if checked:
         selected_station = data.get('selected_station')
+
         return html.Div(
             [
                 map.viewport_map(
                     CITY, 'viewport_on_map_correlation', 
                     circle_mode=bool(selected_station), 
-                    selected_station=selected_station
+                    selected_station=selected_station,
+                    has_colorbar=True
                 ),
             ],
             id='correlation_on_map'
@@ -237,8 +239,7 @@ def update_on_circle_marker_click(n_clicks, selected_station_state, map_key):
     if selected_station_state.get('selected_station') == selected_station:
         raise PreventUpdate
     
-    map_children = map.get_map_children(CITY, circle_mode=True, selected_station=selected_station)
+    map_children = map.get_map_children(CITY, circle_mode=True, selected_station=selected_station, has_colorbar=True)
     new_map_key = (map_key or 0) + 1
 
     return {'selected_station': selected_station}, new_map_key, map_children
-

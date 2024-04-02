@@ -19,27 +19,8 @@ register_page(__name__, path='/acp', name='ACP', title='TER', order=4,
 def layout():
     return html.Div(
         [
-            get_tabs(),
-            dcc.Graph(id='acp_plot', figure=figures.acp_eigenvectors_plot(CITY, [0,1])),
-            map.viewport_map(CITY, 'viewport_map_acp', acp_mode=True, index=0)
+            map.viewport_map(CITY, 'viewport_map_acp', acp_mode=True, index=1, has_colorbar=True),
+            dcc.Graph(id='acp_plot', figure=figures.acp_eigenvectors_plot(CITY, [0,1]))
         ],
         id='acp_layout'
-    )
-
-def get_tabs():
-    return dmc.Tabs(
-        [
-            dmc.TabsList(
-                [
-                    dmc.Tab('Vecteur propres', value='vp'),
-                    dmc.Tab('Cartes coefficient', value='map'),
-                    dmc.Tab('Settings', value='settings'),
-                ],
-                position='center'
-            ),
-            dmc.TabsPanel('Gallery tab content', value='vp'),
-            dmc.TabsPanel('Messages tab content', value='map'),
-            dmc.TabsPanel('Settings tab content', value='settings'),
-        ],
-        id='acp_tabs'
     )

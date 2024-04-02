@@ -4,6 +4,8 @@ import numpy as np
 from data.city.load_cities import City
 from data.data import calculate_correlations, get_acp
 
+import matplotlib.colors as mcolors
+
 ICONS = {
     'red': {
         'iconUrl': './assets/pictures/marker/marker-icon-red.png',
@@ -53,19 +55,41 @@ def get_edit_control():
         ]
     )
 
-def get_map_children(city: City, markers_distribution: list[list[dict]]={}, has_edit_control: bool=False, default_markers_colors: str='blue', circle_mode: bool=False, selected_station: str=None, acp_mode: bool=False, index: int=0):
+def get_colorbar(colorbar_range: tuple[int]) -> dl.Colorbar:
+    return dl.Colorbar(
+        colorscale=['blue', 'yellow'],
+        width=20,
+        height=200,
+        max=colorbar_range[1],
+        min=colorbar_range[0],
+        position='topright',
+        nTicks=5,
+        id='colorbar'
+    )
+
+def get_map_children(city: City, markers_distribution: list[list[dict]]={}, has_edit_control: bool=False,
+                     default_markers_colors: str='blue', circle_mode: bool=False, selected_station: str=None,
+                     acp_mode: bool=False, index: int=0, has_colorbar: bool=False, colorbar_range: tuple[int]=(-1, 1)):
     children = [dl.TileLayer()] # OpenStreetMap par défaut
     if has_edit_control:
         children += [get_edit_control()]
     if circle_mode and selected_station:
         children += get_correlation_markers(city, selected_station)
     elif acp_mode:
+        _, pca, _ = get_acp(city)
+        children += [get_colorbar((np.min(pca.components_[index]), np.max(pca.components_[index])))]
         children += get_acp_markers(city, index)
+        return children
     else:
         children += get_markers(city, markers_distribution, default_markers_colors)
+    
+    if has_colorbar:
+        children += [get_colorbar(colorbar_range)]
     return children
 
-def viewport_map(city: City, id: str, has_edit_control: bool=False, default_markers_colors: str='blue', circle_mode: bool=False, selected_station: str=None, acp_mode: bool=False, index: int=0):
+def viewport_map(city: City, id: str, has_edit_control: bool=False, default_markers_colors: str='blue',
+                 circle_mode: bool=False, selected_station: str=None, acp_mode: bool=False, index: int=0, has_colorbar: bool=False,
+                 colorbar_range: tuple[int]=(-1, 1)):
     return dl.Map(
         children=get_map_children(
             city=city,
@@ -74,7 +98,9 @@ def viewport_map(city: City, id: str, has_edit_control: bool=False, default_mark
             circle_mode=circle_mode,
             selected_station=selected_station,
             acp_mode=acp_mode,
-            index=index
+            index=index,
+            has_colorbar=has_colorbar,
+            colorbar_range=colorbar_range
         ),
         center=city.centroid,
         bounds=city.bounds,
@@ -90,17 +116,23 @@ def viewport_map(city: City, id: str, has_edit_control: bool=False, default_mark
         id=id
     )
 
+def get_color(value: float, min_value: float, max_value: float):
+        # Définition des couleurs de départ et d'arrivée
+        start_color = 'blue'
+        end_color = 'yellow'
+        
+        # Création du dégradé de couleur
+        cmap = mcolors.LinearSegmentedColormap.from_list('custom', [start_color, end_color])
+
+        # Normalisation de la valeur entre 0 et 1
+        normalized_value = (value - min_value) / (max_value - min_value)
+
+        rgba_color = cmap(normalized_value)
+        
+        return mcolors.to_hex(rgba_color)
+
 def get_correlation_markers(city: City, selected_station: str) -> list[dl.CircleMarker]:
     correlations = calculate_correlations(city, selected_station)
-    
-    def correlation_color(correlation_value):
-        if round(correlation_value, 3) == 1.0:
-            return 'yellow'
-        if correlation_value < -0.3:
-            return 'red'
-        elif correlation_value > 0.3:
-            return 'green'
-        return 'blue'
     
     return [
         dl.CircleMarker(
@@ -112,11 +144,12 @@ def get_correlation_markers(city: City, selected_station: str) -> list[dl.Circle
             radius=8,  
             color='black',  
             fill=True,
-            fillColor=correlation_color(correlations[row['code_name']]),  # Couleur de remplissage basée sur la corrélation
+            fillColor=get_color(correlations[row['code_name']], -1, 1),  # Couleur de remplissage basée sur la corrélation
             fillOpacity=0.7,  
             stroke=True,
             weight=1, 
-            n_clicks=0
+            n_clicks=0,
+            
         ) for index, row in city.df_coordinates.iterrows()
     ]
 
@@ -133,7 +166,8 @@ def get_acp_markers(city, index):
     
     markers = []
     for i, row in city.df_coordinates.iterrows():
-        color = px.colors.sample_colorscale(color_scale, norm_pca_values[i])[0]
+        # color = px.colors.sample_colorscale(color_scale, norm_pca_values[i])[0]
+        color = get_color(pca_values[i], np.min(pca_values), np.max(pca_values))
         
         marker = dl.CircleMarker(
             center=(row['latitude'], row['longitude']),
@@ -144,7 +178,7 @@ def get_acp_markers(city, index):
             color='black',
             fill=True,
             fillColor=color,
-            fillOpacity=0.7,  
+            fillOpacity=0.85,  
             weight=1,
             id={"type": "pca_marker", "index": i}
         )
