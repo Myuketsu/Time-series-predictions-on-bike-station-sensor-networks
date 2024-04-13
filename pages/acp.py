@@ -19,7 +19,7 @@ register_page(__name__, path='/acp', name='ACP', title='TER', order=4,
 def layout():
     return html.Div(
         [
-            map.viewport_map(CITY, 'viewport_map_acp', acp_mode=True, index=1, has_colorbar=True),
+            map.viewport_map(CITY, 'viewport_map_acp', acp_mode=True, index=0, has_colorbar=True),
             dcc.Graph(id='acp_plot', figure=figures.acp_eigenvectors_plot(CITY, [0,1]))
         ],
         id='acp_layout'

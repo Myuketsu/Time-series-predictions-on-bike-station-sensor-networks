@@ -1,10 +1,9 @@
 import dash_leaflet as dl
-import plotly.express as px 
 import numpy as np
+
+import view.color as color
 from data.city.load_cities import City
 from data.data import calculate_correlations, get_acp
-
-import matplotlib.colors as mcolors
 
 ICONS = {
     'red': {
@@ -47,7 +46,7 @@ def get_edit_control():
                     'polyline': False,
                     'rectangle': False,
                     'marker': False,
-                    'circlemarker': False,
+                    'circlemarker': False
                 },
                 edit={'edit': False},
                 geojson={'type': 'FeatureCollection', 'features': []}
@@ -116,21 +115,6 @@ def viewport_map(city: City, id: str, has_edit_control: bool=False, default_mark
         id=id
     )
 
-def get_color(value: float, min_value: float, max_value: float):
-        # Définition des couleurs de départ et d'arrivée
-        start_color = 'blue'
-        end_color = 'yellow'
-        
-        # Création du dégradé de couleur
-        cmap = mcolors.LinearSegmentedColormap.from_list('custom', [start_color, end_color])
-
-        # Normalisation de la valeur entre 0 et 1
-        normalized_value = (value - min_value) / (max_value - min_value)
-
-        rgba_color = cmap(normalized_value)
-        
-        return mcolors.to_hex(rgba_color)
-
 def get_correlation_markers(city: City, selected_station: str) -> list[dl.CircleMarker]:
     correlations = calculate_correlations(city, selected_station)
     
@@ -144,8 +128,8 @@ def get_correlation_markers(city: City, selected_station: str) -> list[dl.Circle
             radius=8,  
             color='black',  
             fill=True,
-            fillColor=get_color(correlations[row['code_name']], -1, 1),  # Couleur de remplissage basée sur la corrélation
-            fillOpacity=0.7,  
+            fillColor=color.find_color_between(color.normalize_value(correlations[row['code_name']], -1, 1)),  # Couleur de remplissage basée sur la corrélation
+            fillOpacity=0.85,  
             stroke=True,
             weight=1, 
             n_clicks=0,
@@ -158,16 +142,12 @@ def get_acp_markers(city, index):
     _, pca, _ = get_acp(city)
     
     pca_values = pca.components_[index]
-    
-    # Normalisation des valeurs pour l'echelle de couleur (entre 0 et 1)
-    norm_pca_values = (pca_values - np.min(pca_values)) / (np.max(pca_values) - np.min(pca_values))
-
-    color_scale = px.colors.sequential.Plasma  # Vous pouvez choisir n'importe quelle échelle de couleurs Plotly
+    normalized_value: np.ndarray = color.normalize_value(pca_values)
     
     markers = []
     for i, row in city.df_coordinates.iterrows():
         # color = px.colors.sample_colorscale(color_scale, norm_pca_values[i])[0]
-        color = get_color(pca_values[i], np.min(pca_values), np.max(pca_values))
+        current_color = color.find_color_between(normalized_value[i])
         
         marker = dl.CircleMarker(
             center=(row['latitude'], row['longitude']),
@@ -177,7 +157,7 @@ def get_acp_markers(city, index):
             radius=8,  
             color='black',
             fill=True,
-            fillColor=color,
+            fillColor=current_color,
             fillOpacity=0.85,  
             weight=1,
             id={"type": "pca_marker", "index": i}
