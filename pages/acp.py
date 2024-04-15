@@ -10,7 +10,8 @@ from dash_iconify import DashIconify
 
 from data.city.load_cities import CITY
 import view.figures as figures
-import view.map as map
+import view.map_factory as map_factory
+from data import data
 
 
 register_page(__name__, path='/acp', name='ACP', title='TER', order=4,
@@ -19,8 +20,18 @@ register_page(__name__, path='/acp', name='ACP', title='TER', order=4,
 def layout():
     return html.Div(
         [
-            map.viewport_map(CITY, 'viewport_map_acp', acp_mode=True, index=0, has_colorbar=True),
-            dcc.Graph(id='acp_plot', figure=figures.acp_eigenvectors_plot(CITY, [0,1]))
+            create_map(index=1),
+            dcc.Graph(id='acp_plot', figure=figures.acp_eigenvectors_plot(CITY, [0, 1]))
         ],
         id='acp_layout'
     )
+
+def create_map(index: int):
+    acp_map = map_factory.viewport_map(CITY, 'viewport_map_acp')
+
+    _, pca, _ = data.get_acp(CITY)
+    pca_values = pca.components_[index]
+
+    map_factory.add_to_children(acp_map, [map_factory.get_colorbar((pca_values.min(), pca_values.max()))])
+    map_factory.add_to_children(acp_map, map_factory.get_acp_markers(CITY, pca_values))
+    return acp_map

@@ -28,14 +28,16 @@ def get_correlation_on_selected_stations(city: City, columns: list[str], ordered
 
     return df_corr.mask(mask)
 
-def calculate_correlations(city: City, selected_station: str):
+def calculate_correlations(city: City, selected_station: str) -> dict[str, float]:
     correlations = {}
-    selected_station_data = city.df_hours[selected_station]
+    df = city.df_hours.loc[:, ~city.df_hours.columns.isin(['id', 'date'])]
+
+    selected_station_data = df[selected_station]
     
-    for station in city.df_hours.columns:
+    for station in df.columns:
         if station == selected_station:
-            correlations[station] = 1
-        correlation = selected_station_data.corr(city.df_hours[station])
+            correlations[station] = 1.0
+        correlation = selected_station_data.corr(df[station])
         correlations[station] = correlation
     return correlations
 
@@ -184,54 +186,6 @@ def get_data_between_dates(city: City, date_range: list[str]) -> pd.DataFrame:
     return city.df_hours[
         (city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))
     ]
-
-def get_tsne_dataframe(df: pd.DataFrame) -> None:
-    '''t-SNE (t-Distributed Stochastic Neighbor Embedding)'''
-    X = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
-
-    from sklearn.manifold import TSNE
-
-    scaler = StandardScaler()
-    X = scaler.fit_transform(X)
-
-    # --- TSNE 2D ---
-    tsne = TSNE(n_components=2, init='pca', perplexity=15, random_state=0, n_jobs=-1)
-    X_tsne = tsne.fit_transform(X)
-
-    X_tsne = pd.DataFrame(X_tsne, index=df.index, columns=[f'Dim{i + 1}' for i in range(X_tsne.shape[1])])
-    X_tsne['hue'] = df['date'].dt.month_name(locale='French')
-    print(X_tsne.head())
-
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-
-    unique = X_tsne['hue'].unique()
-    palette = dict(zip(unique, sns.color_palette(n_colors=len(unique))))
-    sns.scatterplot(X_tsne, x='Dim1', y='Dim2', hue='hue', palette=palette)
-    plt.show()
-
-    print(tsne.kl_divergence_)
-
-    # --- TSNE 3D ---
-    # tsne = TSNE(n_components=3, init='pca', perplexity=15, random_state=0, n_jobs=-1)
-    # X_tsne = tsne.fit_transform(X)
-
-    # X_tsne = pd.DataFrame(X_tsne, columns=[f'Dim{i + 1}' for i in range(X_tsne.shape[1])])
-    # print(X_tsne.head())
-
-    # import matplotlib.pyplot as plt
-
-    # plt.figure(figsize=(10, 8))
-    # ax = plt.axes(projection="3d")
-    # ax.scatter3D(X_tsne.iloc[:, 0], X_tsne.iloc[:, 1], X_tsne.iloc[:, 2])
-    # ax.set_xlabel(X_tsne.columns[0])
-    # ax.set_ylabel(X_tsne.columns[1])
-    # ax.set_zlabel(X_tsne.columns[2])
-    # plt.show()
-
-    # print(tsne.kl_divergence_)
-
-    return
 
 def compute_kde(df, station):
     x = np.linspace(0, 1, 200)

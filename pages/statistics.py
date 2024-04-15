@@ -9,7 +9,7 @@ import dash_mantine_components as dmc
 from dash_iconify import DashIconify
 
 from data.city.load_cities import CITY
-from view.map import viewport_map
+from view import map_factory
 from view import figures
 
 register_page(__name__, path='/statistique_map', name='Statistique', title='TER', order=2,
@@ -18,11 +18,16 @@ register_page(__name__, path='/statistique_map', name='Statistique', title='TER'
 def layout():
     return html.Div(
         [
-            viewport_map(CITY, 'viewport_map_statistics'),
+            create_map(),
             menus_map(),
             get_modal()
         ]
     )
+
+def create_map():
+    statistics_map = map_factory.viewport_map(CITY, 'viewport_map_statistics')
+    map_factory.add_to_children(statistics_map, map_factory.get_circle_markers(CITY))
+    return statistics_map
 
 def get_modal():
     return dbc.Modal(
@@ -108,7 +113,7 @@ def menus_map():
         
     ],
     [
-        Input({'type': 'marker', 'code_name': ALL, 'index': ALL}, 'n_clicks'),
+        Input({'type': 'circle_marker', 'code_name': ALL, 'index': ALL}, 'n_clicks'),
         Input('date_range_picker_map_statistics', 'value'),
         Input('select_map_statistics', 'value')
     ],
@@ -125,7 +130,7 @@ def display_graph(n_clicks, date_range, selected_station):
     radar_chart = no_update
     graph_mean_hour = no_update
     
-    if (isinstance(triggeredId, dict) and triggeredId['type'] == 'marker') or (triggeredId == 'select_map_statistics'):
+    if (isinstance(triggeredId, dict) and triggeredId['type'] == 'circle_marker') or (triggeredId == 'select_map_statistics'):
         station_id = triggeredId['code_name'] if isinstance(triggeredId, dict) else selected_station
         line_plot = figures.bike_distrubution(CITY, station_id, date_range)
         box_plot = figures.bike_boxplot(CITY, station_id, date_range)
