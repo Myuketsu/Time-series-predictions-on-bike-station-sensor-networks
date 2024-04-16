@@ -13,7 +13,32 @@ from json import dumps
 
 from data.city.load_cities import City
 
+
+class PCAResults:
+    def __init__(self, pca, feature_names, components):
+        self.pca = pca
+        self.feature_names = feature_names
+        self.components = components
+
+
 def get_correlation_on_selected_stations(city: City, columns: list[str], ordered: bool=False):
+    """
+    Compute the Pearson correlation coefficients between the data of selected stations in a City's DataFrame.
+
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing hourly data in 'df_hours'.
+    columns : list[str]
+        A list of station names whose data will be used for correlation calculation.
+    ordered : bool, optional
+        If True, the correlation matrix is ordered using hierarchical clustering (default is False).
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the Pearson correlation coefficients between the selected stations' data.
+    """
     df_corr = city.df_hours[sorted(columns)].corr().round(3)
 
     if ordered:
@@ -22,44 +47,113 @@ def get_correlation_on_selected_stations(city: City, columns: list[str], ordered
         order = hierarchy.leaves_list(linkage_matrix)
         df_corr = df_corr.iloc[order, order]
 
-    # Mask to matrix
     mask = np.zeros_like(df_corr, dtype=bool)
     mask[np.triu_indices_from(mask)] = True
 
     return df_corr.mask(mask)
 
 def calculate_correlations(city: City, selected_station: str) -> dict[str, float]:
-    correlations = {}
-    df = city.df_hours.loc[:, ~city.df_hours.columns.isin(['id', 'date'])]
+    """
+    Calculate the Pearson correlation coefficients between the data of a selected station
+    and all other stations in the city's DataFrame.
 
-    selected_station_data = df[selected_station]
-    
-    for station in df.columns:
-        if station == selected_station:
-            correlations[station] = 1.0
-        correlation = selected_station_data.corr(df[station])
-        correlations[station] = correlation
-    return correlations
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing hourly data in 'df_hours'.
+    selected_station : str
+        The station name whose data will be used as the reference for correlation calculation.
 
-def get_data_between_dates(city: City, date_range: list[str]):
+    Returns
+    -------
+    dict[str, float]
+        A dictionary where the keys are station names and the values are the correlation coefficients
+        between the selected station's data and each respective station's data.
+    """
+    df = city.df_hours.drop(columns=['date'])
+    return df.corrwith(df[selected_station]).to_dict()
+
+def compute_kde(df : pd.DataFrame, station : str) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Computes the Kernel Density Estimation (KDE) of a station's data in a DataFrame.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        A DataFrame containing the data to compute the KDE from.
+
+    station : str
+        The name of the station to compute the KDE for.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        A tuple containing the x and y values of the KDE.
+    """
+    x = np.linspace(0, 1, 200)
+    kde = gaussian_kde(df[station])
+    y = kde(x)
+    return x , y
+
+def get_data_between_dates(city: City, date_range: list[str]) -> pd.DataFrame:
+    """
+    Extracts the hourly data from a City's DataFrame between two dates.
+
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing the DataFrame 'df_hours' with hourly data.
+
+    date_range : list[str]
+        A list containing two strings representing the start and end dates in the format 'MM-DD-YYYY'.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing the hourly data between the two dates.
+    """
     return city.df_hours[(city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))]
 
-def get_data_month(city: City):
+def get_data_month(city: City) -> pd.DataFrame:
+    """
+    Computes the monthly average of hourly data for each station and an additional 
+    average across all stations for each month in the City's dataset.
+
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing the DataFrame 'df_hours' with hourly data.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame with each column representing the monthly average values for each station,
+        and an additional column 'mean_by_row' representing the average across all stations 
+        for each month. The DataFrame's rows are indexed by month (1 through 12).
+    """
     df=city.df_hours
     df.set_index('date', inplace=True)
     df_mean_by_month = df.groupby(df.index.month).mean()
-    df_mean_by_month= df_mean_by_month.astype(str)
-    return df_mean_by_month
-
-def get_data_month_all(city: City):
-    df = city.df_hours
-    df.set_index('date', inplace=True)
-    df_mean_by_month = df.groupby(df.index.month).mean()
     df_mean_by_month['mean_by_row'] = df_mean_by_month.mean(axis=1)
-    df_mean_by_month = df_mean_by_month.astype(str)
-    return df_mean_by_month['mean_by_row']
+    return df_mean_by_month.astype(str)
 
-def get_data_mean_hour(city: City):
+def get_data_mean_hour(city: City) -> pd.DataFrame: 
+    """
+    Computes the hourly average of data for each station and an additional average
+    across all stations for each hour in the City's dataset.
+
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing the DataFrame 'df_hours' with hourly data.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame with each column representing the hourly average values for each station,
+        and an additional column 'total_mean' representing the average across all stations
+        for each hour. The DataFrame's rows are indexed by hour (0 through 23).
+    """
     df = city.df_hours
     df.set_index('date', inplace=True)
     df_mean_by_hour = df.groupby(df.index.hour).mean()
@@ -67,25 +161,91 @@ def get_data_mean_hour(city: City):
     return df_mean_by_hour
 
 def check_if_station_in_polygon(city: City, geojson) -> list:
+    """
+    Checks if stations are inside a given polygon defined by a GeoJSON object.
+
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing the DataFrame 'df_coordinates' with station coordinates.
+
+    geojson : dict
+        A GeoJSON object representing a polygon.
+
+    Returns
+    -------
+    list
+        A list of station names that are inside the polygon.
+    """
     polygon: shapely.Polygon = shapely.from_geojson(dumps(geojson)).geoms[-1]
     get_station_inside = city.df_coordinates.apply(lambda row: shapely.Point(row['longitude'], row['latitude']).within(polygon), axis=1)
     return city.df_coordinates[get_station_inside]['code_name'].to_list()
 
-def get_acp(city: City) -> tuple:
+def get_acp(city: City, use_transposed: bool = False) -> PCAResults:
+    """
+    Performs Principal Component Analysis (PCA) on the hourly data of a city, either using the original
+    data or the transposed data matrix.
+
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing the DataFrame 'df_hours' with hourly data.
+    use_transposed : bool, optional
+        If True, PCA is performed on the transposed data matrix (default is False). (Use transposed data to get the PCA of the hours instead of the stations)
+
+    Returns
+    -------
+    PCAResults
+        An object containing the PCA model, feature names, and the PCA components.
+    """
     df = city.df_hours
     df.set_index('date', inplace=True)
-    df = df.groupby(df.index.hour).mean()
-    X_selected = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
+    df_mean = df.groupby(df.index.hour).mean()
+
+    if use_transposed:
+        df_mean = df_mean.T
 
     scaler = StandardScaler()
-    X = scaler.fit_transform(X_selected)
+    X_scaled = scaler.fit_transform(df_mean)
 
     pca = PCA()
-    X_pca = pca.fit_transform(X)
-    
-    feature_names = X_selected.columns.values
+    X_pca = pca.fit_transform(X_scaled)
 
-    return X_pca, pca, feature_names
+    return PCAResults(pca, df_mean.columns.values, X_pca)
+
+
+def reconstruct_curve_from_pca(city: City, station: str, comp_num: int = 3) -> np.ndarray:
+    """
+    Reconstructs the original mean curve of a station from its PCA components.
+
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing the DataFrame 'df_hours' with hourly data.
+    station : str
+        The name of the station to reconstruct the curve for.
+
+    Returns
+    -------
+    np.ndarray
+        An array containing the reconstructed curve of the station.
+    """
+    ACP_station = get_acp(city, use_transposed=False)
+    ACP_hours = get_acp(city, use_transposed=True)
+
+    df = city.df_hours.set_index('date', inplace=False)
+    df_mean = df.groupby(df.index.hour).mean()
+
+    station_index = np.where(ACP_station.feature_names == station)[0][0]
+
+    wi = ACP_hours.pca.components_[0:comp_num]
+
+    ci = ACP_hours.pca.transform(df_mean.T)[station_index][0:comp_num]
+    reconstructed_curve = ci @ wi 
+
+    return reconstructed_curve
+
+
 
 def get_acp_dataframe(df: pd.DataFrame) -> None:
     X_selected = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
@@ -180,15 +340,3 @@ def get_acp_dataframe(df: pd.DataFrame) -> None:
     plt.show()
 
     return
-
-
-def get_data_between_dates(city: City, date_range: list[str]) -> pd.DataFrame:
-    return city.df_hours[
-        (city.df_hours['date'] >= pd.to_datetime(date_range[0])) & (city.df_hours['date'] < pd.to_datetime(date_range[1]) + pd.Timedelta(days=1))
-    ]
-
-def compute_kde(df, station):
-    x = np.linspace(0, 1, 200)
-    kde = gaussian_kde(df[station])
-    y = kde(x)
-    return x , y

@@ -230,7 +230,7 @@ def get_acp_markers(city: City, pca_values: np.ndarray) -> list[dl.CircleMarker]
       based on the PCA value.
     """
     children = [
-        [dl.Tooltip(f'{row['code_name']}: {pca_values[index]:.3f}')]
+        [dl.Tooltip(f"{row['code_name']}: {pca_values[index]:.3f}")]
         for index, (_, row) in enumerate(city.df_coordinates.iterrows())
     ]
     normalized_value: np.ndarray = color.normalize_value(pca_values)

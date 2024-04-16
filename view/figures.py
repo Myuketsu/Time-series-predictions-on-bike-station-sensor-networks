@@ -5,12 +5,12 @@ import pandas as pd
 import re
 
 from data.city.load_cities import City
-from data.data import get_data_between_dates, compute_kde, get_data_month, get_data_month_all, get_data_mean_hour, get_acp
+from data.data import get_data_between_dates, compute_kde, get_data_month, get_data_mean_hour, get_acp, reconstruct_curve_from_pca
 
-def create_empty_graph(title: str=''):
+def create_empty_graph(title: str='') -> go.Figure:
     return px.line(None, title=title)
 
-def radar_chart_distribution(city: City, station: str):
+def radar_chart_distribution(city: City, station: str) -> go.Figure:
     station_name = station.replace('-', ' ')
     station_name = re.sub(r'\d+', '', station_name)
     station_name = ' '.join(station_name.split())
@@ -22,7 +22,7 @@ def radar_chart_distribution(city: City, station: str):
     data_station['Mois'] = data_station['Mois'].map(mois_noms)
     data_station['Valeur'] = pd.to_numeric(data_station['Valeur'], errors='coerce')  
 
-    data_all = get_data_month_all(city)
+    data_all = get_data_month(city)['mean_by_row']
     data_all = data_all.reset_index()
     data_all.columns = ['Mois', 'Valeur']
     data_all['Mois'] = data_all['Mois'].map(mois_noms)
@@ -56,16 +56,7 @@ def radar_chart_distribution(city: City, station: str):
     return fig
 
 
-#def bike_distrubution(city: City, station: str, date_range: list[str]):
-#    return px.line(
-#        data_frame=get_data_between_dates(city, date_range),
-#        x='date',
-#        y=station,
-#       title=f"Distribution des vélos dans la station {station}",
-#        template="seaborn"
-#    )
-
-def bike_distrubution(city: City, station: str, date_range: list[str]):
+def bike_distrubution(city: City, station: str, date_range: list[str]) -> go.Figure:
     station_name = station.replace('-', ' ')
     station_name = re.sub(r'\d+', '', station_name)
     station_name = ' '.join(station_name.split())
@@ -78,7 +69,7 @@ def bike_distrubution(city: City, station: str, date_range: list[str]):
         template="seaborn"
     )
     
-def bike_distrution_mean_hour(city: City, station: str):
+def bike_distrution_mean_hour(city: City, station: str) -> go.Figure:
     data = get_data_mean_hour(city)
     fig = px.line(
         data_frame=data,
@@ -100,16 +91,9 @@ def bike_distrution_mean_hour(city: City, station: str):
     )
     return fig
 
-#def bike_boxplot(city: City, station: str, date_range: list[str]):
-#    return px.box(
-#        data_frame=get_data_between_dates(city, date_range),
-#        x=station,
-#        title=f"Boîte à moustache de la station : {station}",
-#        template="seaborn"
-#   )
 
-def bike_boxplot(city: City, station: str, date_range: list[str]):
-    # Mettre une majuscule au début de la station
+def bike_boxplot(city: City, station: str, date_range: list[str]) -> go.Figure:
+
     station_name = station.replace('-', ' ')
     station_name = re.sub(r'\d+', '', station_name)
     station_name = ' '.join(station_name.split())
@@ -147,7 +131,7 @@ def histogram(city: City, station: str, date_range: list[str]):
     )
     return fig
 
-def correlation_plot(df: pd.DataFrame):
+def correlation_plot(df: pd.DataFrame) -> go.Figure:
     df_splited = df.T.columns.str.split('-', n=1, expand=True)
     codes_columns = df_splited.get_level_values(0)
     names = df_splited.get_level_values(1)
@@ -180,30 +164,91 @@ def correlation_plot(df: pd.DataFrame):
     return fig
 
 
-import plotly.graph_objects as go
+def acp_eigenvectors_plot(city: City, indices: list[int], use_transposed=False) -> go.Figure:
+    """
+    Generates a plot showing the contribution of features to selected principal components from PCA,
+    with the option to use transposed data.
 
-def acp_eigenvectors_plot(city, indices):
-    _, pca, feature_names = get_acp(city)
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing the DataFrame 'df_hours' with hourly data.
+    indices : list[int]
+        List of indices representing the principal components to be plotted.
+    use_transposed : bool, optional
+        If True, PCA is performed on the transposed data matrix (default is False), and y-axis scale is set to [-1, 1].
+
+    Returns
+    -------
+    go.Figure
+        A Plotly figure illustrating the eigenvectors' contributions to the selected principal components.
+    """
+    ACP = get_acp(city, use_transposed=use_transposed)
     fig = go.Figure()
 
     colors = px.colors.qualitative.Plotly
     for i, index in enumerate(indices):
-        color = colors[i % len(colors)]  
+        color = colors[i % len(colors)]
         fig.add_trace(go.Scatter(
-            x=feature_names, 
-            y=pca.components_[index], 
-            mode='lines+markers', 
-            name=f'W{index + 1}',
-            line=dict(color=color)  
+            x=ACP.feature_names,
+            y=ACP.pca.components_[index],
+            mode='lines+markers',
+            name=f'Component {index + 1}',
+            line=dict(color=color)
         ))
-    
+
     fig.update_layout(
-        title=f'Contribution des caractéristiques aux composantes principales sélectionnées',
-        xaxis=dict(tickangle=90, title='Caractéristiques'),
+        title='Contribution of Features to Selected Principal Components',
+        xaxis=dict(tickangle=90, title='Features'),
         yaxis_title="Contribution",
-        showlegend=True
+        showlegend=True,
+        yaxis=dict(range=[-1, 1] if use_transposed else None) 
     )
 
     return fig
 
     
+def plot_reconstructed_curve(city: City, station: str, comp_num: int = 3):
+    """
+    Generate a plot showing the original and reconstructed curves for a given station.
+
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing the DataFrame 'df_hours' with hourly data.
+    station : str
+        The station code for which the curve is to be reconstructed.
+
+    Returns
+    -------
+    go.Figure
+        A Plotly figure illustrating the original and reconstructed curves for the given station.
+    """
+    df = city.df_hours.set_index('date', inplace=False)
+    original_curve = df.groupby(df.index.hour)[station].mean()
+    reconstructed_curve = reconstruct_curve_from_pca(city, station, comp_num=comp_num)
+    hours = list(range(24))
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=hours,
+        y=original_curve,
+        mode='lines',
+        name='Original Curve',
+        line=dict(color='blue')
+    ))
+    fig.add_trace(go.Scatter(
+        x=hours,
+        y=reconstructed_curve,
+        mode='lines',
+        name='Reconstructed Curve',
+        line=dict(color='red')
+    ))
+    fig.update_layout(
+        title=f'Original and Reconstructed Curves for Station {station}',
+        xaxis_title='Hour of the Day',
+        yaxis_title='Values', 
+        legend_title="Curve Type"
+    )
+
+    return fig
