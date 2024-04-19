@@ -1,5 +1,8 @@
 import pandas as pd
 
+from typing import Self, Any
+from data.city.load_cities import City
+
 # Courage pour faire l'objet de ce projet, c'est une belle aventure qui commence.
 # Je suis sûr que tu vas réussir à faire quelque chose de bien avec ce projet.
 # N'hésite pas à me demander si tu as besoin d'aide.
@@ -16,3 +19,24 @@ import pandas as pd
 # N'hésite pas à me demander si tu as besoin d'aide.
 # Bonne chance pour la suite !
 
+class PredictSetup():
+    name = 'setup'
+    
+    def __init__(self: Self, city: City, train_size: float=0.7) -> None:
+        self.city = city
+
+        self.df_dataset = city.df_hours.copy()
+        self.df_dataset = self.df_dataset.set_index('date')
+
+        self.split_data(train_size)
+
+    def split_data(self: Self, train_size: float) -> None:
+        split_point = int(len(self.city.df_hours) * train_size)
+        self.train_dataset = self.df_dataset.iloc[:split_point]
+        self.test_dataset = self.df_dataset.iloc[split_point:]
+    
+    def train(self: Self) -> None:
+        pass
+
+    def predict(self: Self, selected_stations: list[str]=None) -> pd.DataFrame:
+        pass

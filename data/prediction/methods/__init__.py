@@ -1,0 +1,1 @@
+from data.prediction.methods.mean_predictor import PredictByMean

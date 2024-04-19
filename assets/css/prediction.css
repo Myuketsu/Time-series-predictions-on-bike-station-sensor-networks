@@ -1,0 +1,37 @@
+#prediction_layout {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    min-height: calc(100vh - var(--navbar_height));
+}
+
+#prediction_form {
+    display: flex;
+    flex-direction: column;
+    margin: 20px;
+    height: calc(20vh - 40px);
+    width: calc(100vw - 40px);
+    border: 1px solid #e6e9ec;
+    border-radius: 8px;
+    padding: 6px;
+}
+
+#prediction_graph_area {
+    display: flex;
+    height: calc(80vh - var(--navbar_height));
+    width: 100vw;
+    background-color: red;
+}
+
+#prediction_date_slider {
+    width: 60%;
+}
+
+#prediction_SegmentedControl_method {
+    margin-bottom: 10px;
+    height: 40px;
+}
+
+#prediction_Slider_predict {
+    width: 80%;
+}
