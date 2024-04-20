@@ -245,7 +245,8 @@ def reconstruct_curve_from_pca(city: City, station: str, comp_num: int = 3) -> n
 
     return reconstructed_curve
 
-
+def get_shifted_date(date: str, days: int=6) -> pd.Timestamp:
+    return pd.to_datetime(date) + pd.DateOffset(days=days)
 
 def get_acp_dataframe(df: pd.DataFrame) -> None:
     X_selected = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
