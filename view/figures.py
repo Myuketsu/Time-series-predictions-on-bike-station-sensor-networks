@@ -252,3 +252,43 @@ def plot_reconstructed_curve(city: City, station: str, comp_num: int = 3):
     )
 
     return fig
+
+# --- PREDICTIONS ---
+
+def interpolation_plot_analyzer(city: City, station: str, interpolated_indices: list[list[int]]) -> go.Figure:
+    df = city.df_hours[station].copy().to_frame(name='Données originales')
+
+    df['Sans interpolation'] = city.df_hours[station].copy()
+    indices = [index for interpolated_slice in interpolated_indices for index in interpolated_slice]
+    df.loc[indices, 'Sans interpolation'] = pd.NA
+
+    df = df.set_index(city.df_hours['date'])
+
+    fig = px.line(df)
+    fig.update_layout(
+        title=f'Mise en avant des {len(interpolated_indices)} interpolations de la station {station}',
+        xaxis_title='Date',
+        yaxis_title='Taux d\'occupation de la station (%)',
+        legend_title='Traitement'
+    )
+
+    return fig
+
+def main_graph_prediction(station_name: str, methods: list[pd.Series], reality_data: pd.Series) -> go.Figure:
+    df_predict: pd.DataFrame = reality_data.copy().rename('Données réelles').to_frame()
+    for serie in methods:
+        df_predict = df_predict.join(serie)
+
+    fig = px.line(
+        data_frame=df_predict
+    )
+
+    fig.update_layout(
+        title=f'Prédiction du {methods[0].index[0].strftime('%d-%m-%Y')} au {methods[0].index[-1].strftime('%d-%m-%Y')} de la station {station_name}',
+        xaxis_title='Date',
+        yaxis_title='Taux d\'occupation de la station (%)',
+        legend_title='Entraînement <b>avec</b> interpolation',
+        hovermode='x'
+    )
+
+    return fig

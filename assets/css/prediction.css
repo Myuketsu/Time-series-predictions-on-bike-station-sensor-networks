@@ -75,10 +75,11 @@
 #prediction_dataset_distribution_body {
     display: flex;
     flex-direction: column;
+    
     position: relative;
-    margin-left: 10px;
     width: 500px;
-    top: -6px;
+    height: 46px;
+    margin: 10px auto;
 }
 
 #prediction_dataset_distribution_percentage {
@@ -145,4 +146,8 @@
 #prediction_dataset_test_date_end {
     position: absolute;
     right: 1px;
+}
+
+#prediction_station_select_info_box {
+    width: 300px;
 }

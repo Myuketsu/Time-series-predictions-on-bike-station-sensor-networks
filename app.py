@@ -4,16 +4,10 @@ import dash_mantine_components as dmc
 
 from pages.menu.navbar import get_navbar
 
-scripts = [
-    "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.10.8/dayjs.min.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.10.8/locale/fr.min.js",
-]
-
 app = Dash(
     __name__,
     use_pages=True,
     prevent_initial_callbacks=True,
-    external_scripts=scripts,
     external_stylesheets=[themes.PULSE, icons.BOOTSTRAP],
     suppress_callback_exceptions=True
 )

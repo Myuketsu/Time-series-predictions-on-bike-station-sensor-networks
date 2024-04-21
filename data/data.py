@@ -245,8 +245,37 @@ def reconstruct_curve_from_pca(city: City, station: str, comp_num: int = 3) -> n
 
     return reconstructed_curve
 
-def get_shifted_date(date: str, days: int=6) -> pd.Timestamp:
-    return pd.to_datetime(date) + pd.DateOffset(days=days)
+def get_shifted_date(date: str, hours: int) -> pd.Timestamp:
+    return pd.to_datetime(date) + pd.DateOffset(hours=hours)
+
+def get_interpolated_indices(serie: pd.Series, tolerance: float=1e-3, output_type: str='mask'):
+    mask, current_mask = [], []
+    for index in range(len(serie)):
+        # Si < 2 éléments d'affilé de suite
+        if len(current_mask) < 2:
+            current_mask.append(serie.index.values[index])
+            continue
+        
+        # On check si la différence est la même entre trois éléments d'affilé de suite
+        if np.abs((serie.values[index - 2] - serie.values[index - 1]) - (serie.values[index - 1] - serie.values[index])) < tolerance:
+            current_mask.append(serie.index.values[index])
+            continue
+        
+        # Si la différence est constante et la longueur de l'interpolation < 24 heures
+        if len(current_mask) < 24 and np.abs(serie.values[index - 2] - serie.values[index - 1]) < tolerance:
+            current_mask = []
+
+        if len(current_mask) > 2:
+            mask.append(current_mask[1:-1])
+        current_mask = [serie.index.values[index - 1], serie.index.values[index]]
+
+    if output_type == 'mask':
+        return serie[[index_mask for row in mask for index_mask in row]].index
+
+    if output_type == 'list':
+        return mask
+    
+    raise ValueError('The "output_type" value must be one of the following : "mask", "list".')
 
 def get_acp_dataframe(df: pd.DataFrame) -> None:
     X_selected = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
