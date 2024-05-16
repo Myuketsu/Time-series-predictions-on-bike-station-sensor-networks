@@ -1,0 +1,5 @@
+# Creer un dossier pour chaque modele
+ProphetModels
+RidgeRandomForestModels
+XGBoostModels
+XGBoostPCAModels

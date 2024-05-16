@@ -22,6 +22,10 @@ PREDICTION_LENGTH = 168 # 24 Heures * 7 Jours = 168 Heures = 1 Semaine
 TRAIN_SIZE = 0.7
 PREDICTION_METHODS: list[PredictSetup] = [
     prediction_method.PredictByMean(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
+    prediction_method.PredictByProphet(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE), 
+    prediction_method.PredictByRidgeAndRandomForest(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
+    prediction_method.PredictByXGBoost(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
+    prediction_method.PredictByXGBoostWithPCA(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE)
 ]
 
 for method in PREDICTION_METHODS:
@@ -160,19 +164,19 @@ def get_dataset_distribution(pct: float):
                 [
                     html.Div(
                         dmc.Text(
-                            PREDICTION_METHODS[0].train_dataset.index[0].strftime('%d-%m-%Y'), size=9
+                            PREDICTION_METHODS[1].train_dataset.index[0].strftime('%d-%m-%Y'), size=9
                         ),
                         id='prediction_dataset_training_date_start'
                     ),
                     html.Div(
                         dmc.Text(
-                            PREDICTION_METHODS[0].train_dataset.index[-1].strftime('%d-%m-%Y'), size=9
+                            PREDICTION_METHODS[1].train_dataset.index[-1].strftime('%d-%m-%Y'), size=9
                         ),
                         id='prediction_dataset_training_date_end', style={'right': f'{100 - pct}%'}
                     ),
                     html.Div(
                         dmc.Text(
-                            PREDICTION_METHODS[0].test_dataset.index[-1].strftime('%d-%m-%Y'), size=9
+                            PREDICTION_METHODS[1].test_dataset.index[-1].strftime('%d-%m-%Y'), size=9
                         ),
                         id='prediction_dataset_test_date_end'
                     ),
@@ -211,8 +215,8 @@ def get_data_features():
     )
 
 def graph_area():
-    context_data = PREDICTION_METHODS[0].df_dataset[CITY.df_coordinates['code_name'].iloc[0]].iloc[:CONTEXT_LENGTH]
-    reality_data = PREDICTION_METHODS[0].df_dataset[CITY.df_coordinates['code_name'].iloc[0]].iloc[CONTEXT_LENGTH:CONTEXT_LENGTH + PREDICTION_LENGTH]
+    context_data = PREDICTION_METHODS[1].df_dataset[CITY.df_coordinates['code_name'].iloc[0]].iloc[:CONTEXT_LENGTH]
+    reality_data = PREDICTION_METHODS[1].df_dataset[CITY.df_coordinates['code_name'].iloc[0]].iloc[CONTEXT_LENGTH:CONTEXT_LENGTH + PREDICTION_LENGTH]
     return html.Div(
         [
             dcc.Graph(
@@ -289,10 +293,10 @@ def update_modal(in_select):
     prevent_initial_call=True
 )
 def update_main_graph(in_select, in_start_date):
-    context_data = PREDICTION_METHODS[0].df_dataset[in_select].loc[
+    context_data = PREDICTION_METHODS[1].df_dataset[in_select].loc[
         in_start_date:data.get_shifted_date(in_start_date, CONTEXT_LENGTH - 1)
     ]
-    reality_data = PREDICTION_METHODS[0].df_dataset[in_select].loc[
+    reality_data = PREDICTION_METHODS[1].df_dataset[in_select].loc[
         data.get_shifted_date(in_start_date, CONTEXT_LENGTH):data.get_shifted_date(in_start_date, CONTEXT_LENGTH + PREDICTION_LENGTH - 1)
     ]
 

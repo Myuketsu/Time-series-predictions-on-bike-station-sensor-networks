@@ -277,6 +277,47 @@ def get_interpolated_indices(serie: pd.Series, tolerance: float=1e-3, output_typ
     
     raise ValueError('The "output_type" value must be one of the following : "mask", "list".')
 
+
+def compute_global_mse(city: City, prediction, true_value) -> float:
+    """
+    Compute the Mean of the Mean Squared Error (MSE) between the prediction and the true value for all stations.
+
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing the DataFrame 'df_hours' with hourly data.
+    prediction : np.ndarray
+        An array containing the predicted values.
+    true_value : np.ndarray
+        An array containing the true values.
+
+    Returns
+    -------
+    float
+        The Mean Squared Error between the prediction and the true value.
+    """
+    return ((prediction - true_value) ** 2).mean(axis=1).mean()
+
+def compute_station_mse(city: City, prediction, true_value):
+    """
+    Compute the Mean Squared Error (MSE) between the prediction and the true value for each station.
+
+    Parameters
+    ----------
+    city : City
+        An instance of the City class containing the DataFrame 'df_hours' with hourly data.
+    prediction : np.ndarray
+        An array containing the predicted values.
+    true_value : np.ndarray
+        An array containing the true values.
+
+    Returns
+    -------
+    pd.dataframe
+        A DataFrame containing the Mean Squared Error between the prediction and the true value for each station.
+    """
+    return pd.DataFrame(((prediction - true_value) ** 2).mean(axis=1), index=city.df_hours.columns, columns=['MSE'])
+
 def get_acp_dataframe(df: pd.DataFrame) -> None:
     X_selected = df.copy().loc[:, ~df.columns.isin(['id', 'date'])]
 
@@ -370,3 +411,5 @@ def get_acp_dataframe(df: pd.DataFrame) -> None:
     plt.show()
 
     return
+
+

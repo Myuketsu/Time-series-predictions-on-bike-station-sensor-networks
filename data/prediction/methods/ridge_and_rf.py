@@ -1,21 +1,21 @@
 import os
 import joblib
 import pandas as pd
-import xgboost as xgb
-from typing import Self
+from sklearn.linear_model import Ridge
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+from typing import Self
 from data.city.load_cities import City
 from data.prediction.prediction_setup import PredictSetup
 from data.data import get_interpolated_indices
 
-
-class PredictByXGBoost(PredictSetup):
-    name = 'XGBoost'
+class PredictByRidgeAndRandomForest(PredictSetup):
+    name = 'RidgeAndRandomForest'
 
     def __init__(self: Self, city: City, prediction_length: int, train_size: float=0.7, n_clusters: int = 5) -> None:
         super().__init__(city, prediction_length, train_size)
-        self.model_dir = os.path.join(os.path.dirname(__file__), 'XGBoostModels')
+        self.model_dir = os.path.join(os.path.dirname(__file__), 'RidgeRandomForestModels')
         os.makedirs(self.model_dir, exist_ok=True)
         self.models = {}
         self.scalers = {}
@@ -35,22 +35,22 @@ class PredictByXGBoost(PredictSetup):
         self.station_clusters = {station: cluster for station, cluster in zip(df.columns, clusters)}
 
         for station in df.columns:
-            model_path = os.path.join(self.model_dir, f'{station}_xgboost_model.pkl')
+            model_path = os.path.join(self.model_dir, f'{station}_ridge_randomforest_model.pkl')
             scaler_path = os.path.join(self.model_dir, f'{station}_scaler.pkl')
             
             if os.path.exists(model_path) and os.path.exists(scaler_path):
                 # Charger le modèle et le scaler s'ils existent déjà
-                model = joblib.load(model_path)
+                ridge_model, rf_model = joblib.load(model_path)
                 scaler = joblib.load(scaler_path)
             else:
                 # Entraîner le modèle s'ils n'existent pas
                 df_station = df[[station]].reset_index()
                 df_station.rename(columns={'date': 'ds', station: 'y'}, inplace=True)
-                
+
                 # Retirer les données interpolées
                 interpolated_indices = get_interpolated_indices(df_station['y'])
                 df_station = df_station.drop(interpolated_indices)
-
+                
                 # Ajout des caractéristiques temporelles
                 df_station['hour'] = df_station['ds'].dt.hour
                 df_station['day_of_week'] = df_station['ds'].dt.dayofweek
@@ -67,22 +67,22 @@ class PredictByXGBoost(PredictSetup):
                 scaler = StandardScaler()
                 X_scaled = scaler.fit_transform(X)
                 
-                # Entraîner le modèle XGBoost
-                model = xgb.XGBRegressor(n_estimators=180, max_depth=7, learning_rate=0.05)
-                model.fit(X_scaled, y)
+                # Entraîner les modèles
+                ridge_model = Ridge().fit(X_scaled, y)
+                rf_model = RandomForestRegressor(n_estimators=100, max_depth = 1000, criterion='friedman_mse').fit(X_scaled, y)
                 
-                # Sauvegarder le modèle et le scaler
-                joblib.dump(model, model_path)
+                # Sauvegarder les modèles
+                joblib.dump((ridge_model, rf_model), model_path)
                 joblib.dump(scaler, scaler_path)
             
-            self.models[station] = model
+            self.models[station] = (ridge_model, rf_model)
             self.scalers[station] = scaler
 
     def predict(self: Self, selected_station: str, data: pd.Series) -> pd.Series:
         if selected_station not in self.models:
             raise ValueError(f"Model for station {selected_station} not found.")
         
-        model = self.models[selected_station]
+        ridge_model, rf_model = self.models[selected_station]
         scaler = self.scalers[selected_station]
         
         data_index = PredictSetup.get_DatetimeIndex_from_Series(data, self.prediction_length)
@@ -99,12 +99,13 @@ class PredictByXGBoost(PredictSetup):
         # Normaliser les caractéristiques
         X_future_scaled = scaler.transform(future[['hour', 'day_of_week', 'day_of_month', 'month', 'is_weekend', 'is_sunday', 'station_cluster']])
         
-        # Prédictions basées sur XGBoost
-        predictions = model.predict(X_future_scaled)
+        # Prédictions basées sur Ridge et Random Forest
+        ridge_predictions = ridge_model.predict(X_future_scaled)
+        rf_predictions = rf_model.predict(X_future_scaled)
         
-        # Contrainte des valeurs entre 0 et 1
-        predictions = predictions.clip(0, 1)
+        # Moyenne des deux prédictions pour plus de robustesse
+        future['prediction'] = (ridge_predictions + rf_predictions) / 2
         
-        serie = pd.Series(predictions, index=data_index, name=PredictByXGBoost.name)
+        serie = pd.Series(future['prediction'].values, index=data_index, name=PredictByRidgeAndRandomForest.name)
         
         return serie
