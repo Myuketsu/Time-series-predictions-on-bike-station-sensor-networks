@@ -213,6 +213,17 @@ def get_acp(city: City, use_transposed: bool = False) -> PCAResults:
 
     return PCAResults(pca, df_mean.columns.values, X_pca)
 
+def get_acp_predictor(data, use_transposed: bool = False) -> PCAResults:
+    if use_transposed:
+        data = data.T
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(data)
+
+    pca = PCA()
+    X_pca = pca.fit_transform(X_scaled)
+
+    return PCAResults(pca, data.columns.values, X_pca)
 
 def reconstruct_curve_from_pca(city: City, station: str, comp_num: int = 3) -> np.ndarray:
     """
