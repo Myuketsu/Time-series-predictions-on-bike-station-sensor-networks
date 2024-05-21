@@ -21,7 +21,7 @@ class PredictByMultipleLinearRegression(PredictSetup):
 
     def add_lag_features(self, df: pd.DataFrame, station: str) -> pd.DataFrame:
         for lag in range(1, self.lags + 1):
-            df[f'lag_{lag}'] = df[station].shift(lag + self.prediction_length).fillna(0)
+            df[f'lag_{lag}'] = df[station].shift(lag + self.prediction_length).fillna(method='bfill')
         df = df.dropna().reset_index(drop=True)
         return df
 
@@ -84,9 +84,9 @@ class PredictByMultipleLinearRegression(PredictSetup):
         history = data[-(self.lags + self.prediction_length):]  
         for lag in range(1, self.lags + 1):
             if lag < len(history):
-                future[f'lag_{lag}'] = history.shift(lag).fillna(0).values[-len(future):]
+                future[f'lag_{lag}'] = history.shift(lag).fillna(method='bfill').values[-len(future):]
             else:
-                future[f'lag_{lag}'] = 0
+                future[f'lag_{lag}'] = history.values[0]
 
         future = pd.get_dummies(future, columns=['day_of_week', 'is_weekend', 'is_sunday'], drop_first=True)
 
@@ -103,4 +103,3 @@ class PredictByMultipleLinearRegression(PredictSetup):
 
         serie = pd.Series(predictions, index=data_index, name=PredictByMultipleLinearRegression.name)
         return serie
-
