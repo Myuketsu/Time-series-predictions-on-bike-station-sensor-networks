@@ -1,75 +1,46 @@
-import os
-import joblib
 import pandas as pd
 import xgboost as xgb
+
+from os import makedirs
 from typing import Self
-from sklearn.cluster import KMeans
+
 from data.city.load_cities import City
-from data.prediction.forecast_model import PredictSetup
-from data.data import get_interpolated_indices
+from data.prediction.forecast_model import ForecastModel
 
-
-class XGBoost(PredictSetup):
+class XGBoost(ForecastModel):
     name = 'XGBoost'
 
-    def __init__(self: Self, city: City, prediction_length: int, train_size: float = 0.7, n_clusters: int = 5) -> None:
-        super().__init__(city, prediction_length, train_size)
-        os.makedirs(self.name, exist_ok=True)
+    def __init__(self: Self, city: City, train_size: float = 0.7) -> None:
+        super().__init__(city, train_size)
+        makedirs(self.name, exist_ok=True)
         self.models = {}
 
     def train(self: Self) -> None:
         df = self.train_dataset.copy()
 
         for station in df.columns:
-            model_path = os.path.join(self.model_dir, f'{station}_xgboost_model.pkl')
+            try:
+                current_model = self.load_model(station)
+            except FileNotFoundError:
+                df_X = ForecastModel.create_features_from_date(df['date'])
+                df_y = df[station]
+
+                current_model = xgb.XGBRegressor(n_estimators=50, max_depth=9, learning_rate=0.05)
+                current_model.fit(df_X, df_y)
+
+                self.save_model(current_model, station)
             
-            if os.path.exists(model_path):
-                model = joblib.load(model_path)
-            else:
-                df_station = df[[station]].reset_index()
-                df_station.rename(columns={'date': 'ds', station: 'y'}, inplace=True)
-                
+            self.models[station] = current_model
 
-                df_station['hour'] = df_station['ds'].dt.hour
-                df_station['day_of_week'] = df_station['ds'].dt.dayofweek
-                df_station['day_of_month'] = df_station['ds'].dt.day
-                df_station['month'] = df_station['ds'].dt.month
-                df_station['is_weekend'] = df_station['ds'].dt.dayofweek >= 5
-                df_station['is_sunday'] = df_station['ds'].dt.dayofweek == 6
-
-                X = df_station[['hour', 'day_of_week', 'day_of_month', 'month', 'is_weekend', 'is_sunday']]
-                y = df_station['y']
-
-                model = xgb.XGBRegressor(n_estimators=50, max_depth=9, learning_rate=0.05)
-                model.fit(X, y)
-
-
-                joblib.dump(model, model_path, compress=5)
-            
-            self.models[station] = model
-
-    def predict(self: Self, selected_station: str, data: pd.Series) -> pd.Series:
+    def predict(self: Self, selected_station: str, data: pd.Series, ) -> pd.Series:
         if selected_station not in self.models:
-            raise ValueError(f"Model for station {selected_station} not found.")
+            raise ValueError(f'Model for station {selected_station} not found.')
+
+        data_index = ForecastModel.get_DatetimeIndex_forecasting(data, self.prediction_length)
+        df_X_future = ForecastModel.create_features_from_date(data_index.to_series())
 
         model = self.models[selected_station]
-
-        data_index = PredictSetup.get_DatetimeIndex_from_Series(data, self.prediction_length)
-        future = pd.DataFrame({'ds': data_index})
-
-        future['hour'] = future['ds'].dt.hour
-        future['day_of_week'] = future['ds'].dt.dayofweek
-        future['day_of_month'] = future['ds'].dt.day
-        future['month'] = future['ds'].dt.month
-        future['is_weekend'] = future['ds'].dt.dayofweek >= 5
-        future['is_sunday'] = future['ds'].dt.dayofweek == 6
-
-        X_future = future[['hour', 'day_of_week', 'day_of_month', 'month', 'is_weekend', 'is_sunday']]
-
-        predictions = model.predict(X_future)
-
+        predictions = model.predict(df_X_future)
         predictions = predictions.clip(0, 1)
         
-        serie = pd.Series(predictions, index=data_index, name=XGBoost.name)
-        
-        return serie
+        return pd.Series(predictions, index=data_index, name=self.name)

@@ -46,9 +46,10 @@ class ForecastModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self: Self, selected_stations: str, data: pd.Series) -> pd.Series: # DOIT RETOURNER UNE SERIE !
+    def predict(self: Self, selected_station: str, data: pd.Series) -> pd.Series: # DOIT RETOURNER UNE SERIE !
         pass
     
+    @staticmethod
     def create_features_from_date(date_serie: pd.Series) -> pd.DataFrame:
         df_X = pd.DataFrame()
         df_X['hour'] = date_serie.dt.hour.astype('uint8')
