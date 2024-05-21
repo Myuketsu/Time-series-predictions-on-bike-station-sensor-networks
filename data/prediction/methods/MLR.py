@@ -45,7 +45,6 @@ class PredictByMultipleLinearRegression(PredictSetup):
                 df_station['is_weekend'] = df_station['ds'].dt.dayofweek >= 5
                 df_station['is_sunday'] = df_station['ds'].dt.dayofweek == 6
 
-                df_station = self.add_lag_features(df_station, station)
 
                 df_station = pd.get_dummies(df_station, columns=['hour','day_of_week','day_of_month', 'month','is_weekend', 'is_sunday'], drop_first=True)
 
@@ -78,12 +77,6 @@ class PredictByMultipleLinearRegression(PredictSetup):
         future['is_weekend'] = future['ds'].dt.dayofweek >= 5
         future['is_sunday'] = future['ds'].dt.dayofweek == 6
 
-        history = data[-(self.lags + self.prediction_length):]  
-        for lag in range(1, self.lags + 1):
-            if lag < len(history):
-                future[f'lag_{lag}'] = history.shift(lag).fillna(method='bfill').values[-len(future):]
-            else:
-                future[f'lag_{lag}'] = history.values[0]
 
         future = pd.get_dummies(future, columns=['hour','day_of_week','day_of_month', 'month','is_weekend', 'is_sunday'], drop_first=True)
 

@@ -25,7 +25,6 @@ PREDICTION_METHODS: list[PredictSetup] = [
     prediction_method.PredictByXGBoost(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
     prediction_method.PredictByXGBoostWithPCA(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
     prediction_method.PredictByPCA(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
-    prediction_method.PredictByLightGBM(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
     prediction_method.PredictByMultipleLinearRegression(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
     prediction_method.RandomForestPredictor(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
 ]
