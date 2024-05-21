@@ -3,3 +3,4 @@ ProphetModels
 RidgeRandomForestModels
 XGBoostModels
 XGBoostPCAModels
+LightGBMModels
