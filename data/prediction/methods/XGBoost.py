@@ -1,6 +1,6 @@
 import pandas as pd
-import xgboost as xgb
 
+from xgboost import XGBRegressor
 from os import makedirs
 from typing import Self
 
@@ -25,18 +25,18 @@ class XGBoost(ForecastModel):
                 df_X = ForecastModel.create_features_from_date(df['date'])
                 df_y = df[station]
 
-                current_model = xgb.XGBRegressor(n_estimators=50, max_depth=9, learning_rate=0.05)
+                current_model = XGBRegressor(n_estimators=50, max_depth=9, learning_rate=0.05)
                 current_model.fit(df_X, df_y)
 
                 self.save_model(current_model, station)
             
             self.models[station] = current_model
 
-    def predict(self: Self, selected_station: str, data: pd.Series, ) -> pd.Series:
+    def predict(self: Self, selected_station: str, data: pd.Series, forecast_length: int) -> pd.Series:
         if selected_station not in self.models:
             raise ValueError(f'Model for station {selected_station} not found.')
 
-        data_index = ForecastModel.get_DatetimeIndex_forecasting(data, self.prediction_length)
+        data_index = ForecastModel.get_DatetimeIndex_forecasting(data, forecast_length)
         df_X_future = ForecastModel.create_features_from_date(data_index.to_series())
 
         model = self.models[selected_station]

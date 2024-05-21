@@ -46,7 +46,7 @@ class ForecastModel(ABC):
         pass
 
     @abstractmethod
-    def predict(self: Self, selected_station: str, data: pd.Series) -> pd.Series: # DOIT RETOURNER UNE SERIE !
+    def predict(self: Self, selected_station: str, data: pd.Series, forecast_length: int) -> pd.Series: # DOIT RETOURNER UNE SERIE !
         pass
     
     @staticmethod
