@@ -1,6 +1,7 @@
 import plotly.express as px
 import plotly.graph_objects as go
 
+import numpy as np
 import pandas as pd
 import re
 
@@ -207,7 +208,75 @@ def acp_eigenvectors_plot(city: City, indices: list[int], use_transposed=False) 
 
     return fig
 
+def scree_plot(pca_results):
+    explained_variance = pca_results.pca.explained_variance_ratio_
+    cum_explained_variance = explained_variance.cumsum()
     
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(
+        x=list(range(1, len(explained_variance) + 1)),
+        y=explained_variance,
+        name='Explained Variance'
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=list(range(1, len(cum_explained_variance) + 1)),
+        y=cum_explained_variance,
+        mode='lines+markers',
+        name='Cumulative Explained Variance'
+    ))
+    
+    fig.update_layout(
+        title='Scree Plot',
+        xaxis_title='Principal Component',
+        yaxis_title='Variance Explained',
+        legend_title='Legend'
+    )
+    
+    return fig
+
+def correlation_circle_plot(pca_results, feature_names):
+    # Get the loadings (correlations between the original variables and the principal components)
+    loadings = pca_results.pca.components_.T * np.sqrt(pca_results.pca.explained_variance_)
+
+    # We only need the loadings for the first two principal components
+    loadings = loadings[:, :2]
+
+    # Create the plot
+    fig = go.Figure()
+
+    for i, feature in enumerate(feature_names):
+        fig.add_trace(go.Scatter(
+            x=[0, loadings[i, 0]],
+            y=[0, loadings[i, 1]],
+            mode='lines+markers+text',
+            marker=dict(size=12),
+            text=[None, feature],
+            textposition='top center',
+            name=str(feature)  # Ensure the name is a string
+        ))
+
+    # Add circle boundary
+    circle = np.linspace(0, 2 * np.pi, 100)
+    fig.add_trace(go.Scatter(
+        x=np.cos(circle),
+        y=np.sin(circle),
+        mode='lines',
+        name='Unit Circle'
+    ))
+
+    fig.update_layout(
+        title='Correlation Circle Plot',
+        xaxis=dict(title='First Principal Component', range=[-1.1, 1.1]),
+        yaxis=dict(title='Second Principal Component', range=[-1.1, 1.1]),
+        showlegend=False,
+        width=700,
+        height=700
+    )
+
+    return fig
+
 def plot_reconstructed_curve(city: City, station: str, comp_num: int = 3):
     """
     Generate a plot showing the original and reconstructed curves for a given station.

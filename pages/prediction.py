@@ -22,10 +22,9 @@ PREDICTION_LENGTH = 168 # 24 Heures * 7 Jours = 168 Heures = 1 Semaine
 TRAIN_SIZE = 0.7
 PREDICTION_METHODS: list[PredictSetup] = [
     prediction_method.PredictByMean(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
-    prediction_method.PredictByProphet(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE), 
-    prediction_method.PredictByRidgeAndRandomForest(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
     prediction_method.PredictByXGBoost(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
-    prediction_method.PredictByXGBoostWithPCA(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE)
+    prediction_method.PredictByXGBoostWithPCA(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
+    prediction_method.PredictByPCA(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE)
 ]
 
 for method in PREDICTION_METHODS:
