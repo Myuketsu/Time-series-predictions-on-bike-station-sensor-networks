@@ -26,7 +26,7 @@ class PredictByMean(PredictSetup):
         serie = self.model[selected_stations]
         serie.name = PredictByMean.name
 
-        # On doir ré-indexer les données dans l'ordre des données passé en paramètre
+        # On doit ré-indexer les données dans l'ordre des données passé en paramètre
         # ex: la semaine de données commence par Vendredi, il faut décaler toutes les valeurs de la prédiction (Car commence Lundi 00:00) 
         # pour que la première soit celle de Vendredi 00:00
         data_index = PredictSetup.get_DatetimeIndex_from_Series(data, self.prediction_length)
