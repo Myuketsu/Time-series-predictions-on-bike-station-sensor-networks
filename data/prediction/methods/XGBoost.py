@@ -59,8 +59,12 @@ class PredictByXGBoost(PredictSetup):
                 df_station['is_weekend'] = df_station['ds'].dt.dayofweek >= 5
                 df_station['is_sunday'] = df_station['ds'].dt.dayofweek == 6
                 df_station['station_cluster'] = self.station_clusters[station]
+                # On rajoute du lagging avec un decallage qui correspond à la longueur de la prédiction (prediction_length) pour éviter le data leakage
+                df_station['y_lag'] = df_station['y'].shift(self.prediction_length)
 
-                X = df_station[['hour', 'day_of_week', 'day_of_month', 'month', 'is_weekend', 'is_sunday', 'station_cluster']]
+
+
+                X = df_station[['hour', 'day_of_week', 'day_of_month', 'month', 'is_weekend', 'is_sunday', 'station_cluster', 'y_lag']]
                 y = df_station['y']
                 
                 # Normaliser les caractéristiques
@@ -68,7 +72,7 @@ class PredictByXGBoost(PredictSetup):
                 X_scaled = scaler.fit_transform(X)
                 
                 # Entraîner le modèle XGBoost
-                model = xgb.XGBRegressor(n_estimators=180, max_depth=7, learning_rate=0.05)
+                model = xgb.XGBRegressor(n_estimators=50, max_depth=9, learning_rate=0.05)
                 model.fit(X_scaled, y)
                 
                 # Sauvegarder le modèle et le scaler
@@ -95,11 +99,10 @@ class PredictByXGBoost(PredictSetup):
         future['is_weekend'] = future['ds'].dt.dayofweek >= 5
         future['is_sunday'] = future['ds'].dt.dayofweek == 6
         future['station_cluster'] = self.station_clusters[selected_station]
+        future['y_lag'] = data.values[-self.prediction_length:]
         
-        # Normaliser les caractéristiques
-        X_future_scaled = scaler.transform(future[['hour', 'day_of_week', 'day_of_month', 'month', 'is_weekend', 'is_sunday', 'station_cluster']])
+        X_future_scaled = scaler.transform(future[['hour', 'day_of_week', 'day_of_month', 'month', 'is_weekend', 'is_sunday', 'station_cluster', 'y_lag']])
         
-        # Prédictions basées sur XGBoost
         predictions = model.predict(X_future_scaled)
         
         # Contrainte des valeurs entre 0 et 1
