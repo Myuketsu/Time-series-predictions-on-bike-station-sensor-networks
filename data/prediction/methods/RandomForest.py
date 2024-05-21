@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestRegressor
 from typing import Self
 import joblib
 from data.city.load_cities import City
-from data.prediction.prediction_setup import PredictSetup
+from data.prediction.forecast_model import PredictSetup
 
 class RandomForestPredictor(PredictSetup):
     name = 'RandomForestPredictor'
@@ -44,7 +44,7 @@ class RandomForestPredictor(PredictSetup):
                     max_depth=self.max_depth,
                     min_samples_leaf=self.min_samples_leaf,
                     n_jobs=-1,
-                    verbose=2
+                    # verbose=2
                 )
                 model.fit(X, y)
 

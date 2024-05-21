@@ -6,7 +6,7 @@ from sklearn.preprocessing import StandardScaler
 from typing import Self
 import joblib
 from data.city.load_cities import City
-from data.prediction.prediction_setup import PredictSetup
+from data.prediction.forecast_model import PredictSetup
 
 class PredictByMultipleLinearRegression(PredictSetup):
     name = 'MultipleLinearRegression'

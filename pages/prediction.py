@@ -8,30 +8,10 @@ from dash import dcc
 import data.data as data
 import view.figures as figures
 import data.prediction.methods as prediction_method
-from data.prediction.prediction_setup import PredictSetup
 from data.city.load_cities import CITY
 
 register_page(__name__, path='/prediction', name='Prédictions', title='TER', order=5,
-              category='Prédictions', icon='mdi:location-off-outline')
-
-# --- INITIALISATION ---
-
-CONTEXT_LENGTH = 168 # 24 Heures * 7 Jours = 168 Heures = 1 Semaine
-PREDICTION_LENGTH = 168 # 24 Heures * 7 Jours = 168 Heures = 1 Semaine
-
-TRAIN_SIZE = 0.7
-PREDICTION_METHODS: list[PredictSetup] = [
-    prediction_method.PredictByMean(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
-    prediction_method.PredictByXGBoost(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
-    prediction_method.PredictByXGBoostWithPCA(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
-    prediction_method.PredictByPCA(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
-    prediction_method.PredictByLightGBM(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
-    prediction_method.PredictByMultipleLinearRegression(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
-    prediction_method.RandomForestPredictor(city=CITY, prediction_length=PREDICTION_LENGTH, train_size=TRAIN_SIZE),
-]
-
-for method in PREDICTION_METHODS:
-    method.train()
+              category='Prédictions', icon='clarity:bell-curve-line')
 
 # --- PAGE ---
 
@@ -88,7 +68,7 @@ def get_date_range_picker():
                 locale='fr',
                 value=CITY.df_hours['date'].iloc[0],
                 clearable=False,
-                maxDate=CITY.df_hours['date'].iloc[-(CONTEXT_LENGTH + PREDICTION_LENGTH - 24)],
+                maxDate=CITY.df_hours['date'].iloc[-(prediction_method.CONTEXT_LENGTH + prediction_method.PREDICTION_LENGTH - 24)],
                 minDate=CITY.df_hours['date'].iloc[0],
                 label=dcc.Markdown('**Premier** jour de la plage de données de contexte'),
                 inputFormat='dddd, D MMMM YYYY - 00:00',
@@ -133,7 +113,7 @@ def get_modal():
                 'Dans un second temps, le dataset de test servira à évaluer la performance et la généralisation de notre modèle. '
                 'Ils ont la répartition suivante des données du jeu de données d\'origine :'
             ), mt=12, mb=12),
-            get_dataset_distribution(TRAIN_SIZE),
+            get_dataset_distribution(prediction_method.TRAIN_SIZE),
             dmc.Divider(label=dmc.Text('Caractéristiques du jeu de données', weight=700, transform='uppercase'), labelPosition='center'),
             dmc.Text((
                 'Le jeu de données présente un nombre significatif de valeurs manquantes, représentées par des NaN. '
@@ -166,19 +146,19 @@ def get_dataset_distribution(pct: float):
                 [
                     html.Div(
                         dmc.Text(
-                            PREDICTION_METHODS[1].train_dataset.index[0].strftime('%d-%m-%Y'), size=9
+                            prediction_method.PREDICTION_METHODS[1].train_dataset.index[0].strftime('%d-%m-%Y'), size=9
                         ),
                         id='prediction_dataset_training_date_start'
                     ),
                     html.Div(
                         dmc.Text(
-                            PREDICTION_METHODS[1].train_dataset.index[-1].strftime('%d-%m-%Y'), size=9
+                            prediction_method.PREDICTION_METHODS[1].train_dataset.index[-1].strftime('%d-%m-%Y'), size=9
                         ),
                         id='prediction_dataset_training_date_end', style={'right': f'{100 - pct}%'}
                     ),
                     html.Div(
                         dmc.Text(
-                            PREDICTION_METHODS[1].test_dataset.index[-1].strftime('%d-%m-%Y'), size=9
+                            prediction_method.PREDICTION_METHODS[1].test_dataset.index[-1].strftime('%d-%m-%Y'), size=9
                         ),
                         id='prediction_dataset_test_date_end'
                     ),
@@ -217,15 +197,15 @@ def get_data_features():
     )
 
 def graph_area():
-    context_data = PREDICTION_METHODS[1].df_dataset[CITY.df_coordinates['code_name'].iloc[0]].iloc[:CONTEXT_LENGTH]
-    reality_data = PREDICTION_METHODS[1].df_dataset[CITY.df_coordinates['code_name'].iloc[0]].iloc[CONTEXT_LENGTH:CONTEXT_LENGTH + PREDICTION_LENGTH]
+    context_data = prediction_method.PREDICTION_METHODS[1].df_dataset[CITY.df_coordinates['code_name'].iloc[0]].iloc[:prediction_method.CONTEXT_LENGTH]
+    reality_data = prediction_method.PREDICTION_METHODS[1].df_dataset[CITY.df_coordinates['code_name'].iloc[0]].iloc[prediction_method.CONTEXT_LENGTH:prediction_method.CONTEXT_LENGTH + prediction_method.PREDICTION_LENGTH]
     return html.Div(
         [
             dcc.Graph(
                 id='prediction_main_graph',
                 figure=figures.main_graph_prediction(
                     station_name=CITY.df_coordinates['code_name'].iloc[0],
-                    methods=[method.predict(CITY.df_coordinates['code_name'].iloc[0], context_data) for method in PREDICTION_METHODS],
+                    methods=[method.predict(CITY.df_coordinates['code_name'].iloc[0], context_data) for method in prediction_method.PREDICTION_METHODS],
                     reality_data=reality_data
                 ),
                 style={'width': '100%'}
@@ -246,7 +226,7 @@ def graph_area():
     prevent_initial_call=True
 )
 def update_end_date(date_start):
-    return (data.get_shifted_date(date_start, CONTEXT_LENGTH - 1), )
+    return (data.get_shifted_date(date_start, prediction_method.CONTEXT_LENGTH - 1), )
 
 
 @callback(
@@ -295,16 +275,16 @@ def update_modal(in_select):
     prevent_initial_call=True
 )
 def update_main_graph(in_select, in_start_date):
-    context_data = PREDICTION_METHODS[1].df_dataset[in_select].loc[
-        in_start_date:data.get_shifted_date(in_start_date, CONTEXT_LENGTH - 1)
+    context_data = prediction_method.PREDICTION_METHODS[1].df_dataset[in_select].loc[
+        in_start_date:data.get_shifted_date(in_start_date, prediction_method.CONTEXT_LENGTH - 1)
     ]
-    reality_data = PREDICTION_METHODS[1].df_dataset[in_select].loc[
-        data.get_shifted_date(in_start_date, CONTEXT_LENGTH):data.get_shifted_date(in_start_date, CONTEXT_LENGTH + PREDICTION_LENGTH - 1)
+    reality_data = prediction_method.PREDICTION_METHODS[1].df_dataset[in_select].loc[
+        data.get_shifted_date(in_start_date, prediction_method.CONTEXT_LENGTH):data.get_shifted_date(in_start_date, prediction_method.CONTEXT_LENGTH + prediction_method.PREDICTION_LENGTH - 1)
     ]
 
     fig = figures.main_graph_prediction(
         station_name=in_select,
-        methods=[method.predict(in_select, context_data) for method in PREDICTION_METHODS],
+        methods=[method.predict(in_select, context_data) for method in prediction_method.PREDICTION_METHODS],
         reality_data=reality_data
     )
 

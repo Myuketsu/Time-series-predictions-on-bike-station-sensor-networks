@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from data.city.load_cities import City
-from data.prediction.prediction_setup import PredictSetup
+from data.prediction.forecast_model import PredictSetup
 from data.data import get_interpolated_indices
 
 class PredictByXGBoostWithPCA(PredictSetup):

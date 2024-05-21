@@ -3,9 +3,9 @@ import pandas as pd
 from typing import Self, Any
 
 from data.city.load_cities import City
-from data.prediction.prediction_setup import PredictSetup
+from data.prediction.forecast_model import ForecastModel
 
-class PredictByMean(PredictSetup):
+class PredictByMean(ForecastModel):
     name = 'Moyenne'
 
     def __init__(self: Self, city: City, prediction_length: int, train_size: float=0.7) -> None:
@@ -29,7 +29,7 @@ class PredictByMean(PredictSetup):
         # On doit ré-indexer les données dans l'ordre des données passé en paramètre
         # ex: la semaine de données commence par Vendredi, il faut décaler toutes les valeurs de la prédiction (Car commence Lundi 00:00) 
         # pour que la première soit celle de Vendredi 00:00
-        data_index = PredictSetup.get_DatetimeIndex_from_Series(data, self.prediction_length)
+        data_index = ForecastModel.get_DatetimeIndex_from_Series(data, self.prediction_length)
         tmp_data_index = data_index.to_series().copy().to_frame()
         tmp_data_index['days'] = tmp_data_index.index.day_name()
         tmp_data_index['hours'] = tmp_data_index.index.hour

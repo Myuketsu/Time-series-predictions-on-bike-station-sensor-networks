@@ -6,17 +6,16 @@ from typing import Self
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from data.city.load_cities import City
-from data.prediction.prediction_setup import PredictSetup
+from data.prediction.forecast_model import PredictSetup
 from data.data import get_interpolated_indices
 
 
-class PredictByXGBoost(PredictSetup):
+class XGBoost(PredictSetup):
     name = 'XGBoost'
 
     def __init__(self: Self, city: City, prediction_length: int, train_size: float=0.7, n_clusters: int = 5) -> None:
         super().__init__(city, prediction_length, train_size)
-        self.model_dir = os.path.join(os.path.dirname(__file__), 'XGBoostModels')
-        os.makedirs(self.model_dir, exist_ok=True)
+        os.makedirs(self.name, exist_ok=True)
         self.models = {}
         self.scalers = {}
         self.cluster_model = None
@@ -105,6 +104,6 @@ class PredictByXGBoost(PredictSetup):
         # Contrainte des valeurs entre 0 et 1
         predictions = predictions.clip(0, 1)
         
-        serie = pd.Series(predictions, index=data_index, name=PredictByXGBoost.name)
+        serie = pd.Series(predictions, index=data_index, name=XGBoost.name)
         
         return serie

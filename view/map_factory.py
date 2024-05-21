@@ -181,12 +181,39 @@ def get_colorbar(colorbar_range: tuple[int]) -> dl.Colorbar:
         height=300,
         max=colorbar_range[1],
         min=colorbar_range[0],
-        position='topright',
+        position='bottomleft',
         nTicks=5,
         id='colorbar'
     )
 
 # --- CUSTOM MODULE ---
+
+def get_metric_markers(city: City, metric_name: str, metrics: dict[str, dict[str, float]], type_marker: str) -> list[dl.CircleMarker]:
+    """
+    Generate CircleMarker objects representing locations on a map, with fill colors based on correlation values.
+
+    Parameters
+    ----------
+    - city (City): An instance of the City class containing coordinates data.
+    - metrics (dict[str, float]): A dictionary containing station names as keys and correlation values as values.
+    - type_marker (str): Type identifier for the markers.
+
+    Returns
+    -------
+    - list[dl.CircleMarker]: A list of CircleMarker objects, each representing a location on the map with a fill color
+      based on the correlation value.
+    """
+    children, fill_color = [], []
+    for station_name, metric in metrics.items():
+        children.append([dl.Tooltip(f'{station_name}: {metric_name.upper()} {metric[metric_name]:.3f}')])
+        fill_color.append(color.find_color_between(color.normalize_value(metric[metric_name], 0, 0.5)))
+
+    return get_circle_markers(
+        city=city,
+        children=children,
+        fill_color=fill_color,
+        type_marker=type_marker
+    )
 
 def get_correlation_markers(city: City, correlations: dict[str, float], type_marker: str) -> list[dl.CircleMarker]:
     """

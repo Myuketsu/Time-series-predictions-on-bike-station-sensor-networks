@@ -4,7 +4,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from typing import Self, Any
 from data.city.load_cities import City
-from data.prediction.prediction_setup import PredictSetup
+from data.prediction.forecast_model import PredictSetup
 from data.data import get_acp_predictor
 
 class PredictByPCA(PredictSetup):
