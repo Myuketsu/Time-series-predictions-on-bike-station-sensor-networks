@@ -41,7 +41,7 @@
     margin-left: 25px;
     margin-right: 25px;
     margin-bottom: 0px;
-    width: 350px;
+    width: 250px;
 }
 
 #prediction_divider_date_range > * > * > p {
@@ -55,7 +55,7 @@
 }
 
 #prediction_station_select {
-    width: 300px;
+    width: 200px;
 }
 
 #prediction_info_button {

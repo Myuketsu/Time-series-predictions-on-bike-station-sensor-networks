@@ -92,7 +92,7 @@ def get_date_range_picker():
                 minDate=CITY.df_hours['date'].iloc[0],
                 label=dcc.Markdown('**Premier** jour de la plage de données de contexte'),
                 inputFormat='dddd, D MMMM YYYY - 00:00',
-                style={'width': 350}
+                style={'width': 320}
             ),
             dmc.Divider(
                 id='prediction_divider_date_range',
@@ -106,7 +106,7 @@ def get_date_range_picker():
                 label=dcc.Markdown('**Dernier** jour de la plage de données de contexte'),
                 inputFormat='dddd, D MMMM YYYY - 23:00',
                 disabled=True,
-                style={'width': 350}
+                style={'width': 320}
             )
         ],
         id='prediction_date_range_picker'
