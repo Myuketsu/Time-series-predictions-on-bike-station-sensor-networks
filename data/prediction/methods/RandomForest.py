@@ -5,6 +5,7 @@ from os import makedirs
 from typing import Self
 
 from data.city.load_cities import City
+from data.data import get_interpolated_indices
 from data.prediction.forecast_model import ForecastModel, PATH_MODEL
 
 class RandomForestPredictor(ForecastModel):
@@ -22,8 +23,11 @@ class RandomForestPredictor(ForecastModel):
             try:
                 current_model: RandomForestRegressor = self.load_model(station)
             except FileNotFoundError:
-                df_X = ForecastModel.create_features_from_date(df.index.to_series())
-                df_y = df[station]
+                interpolated_indices = get_interpolated_indices(df[station], output_type='mask')
+                df_filtered = df.drop(index=interpolated_indices)
+                
+                df_X = ForecastModel.create_features_from_date(df_filtered.index.to_series())
+                df_y = df_filtered[station]
 
                 current_model = RandomForestRegressor(n_estimators=12, max_depth=12, n_jobs=-1)
                 current_model.fit(df_X, df_y)

@@ -3,6 +3,7 @@ from sklearn.linear_model import LinearRegression
 from typing import Self
 from data.city.load_cities import City
 from data.prediction.forecast_model import ForecastModel, PATH_MODEL
+from data.data import get_interpolated_indices
 from os import makedirs
 
 class MultipleLinearRegression(ForecastModel):
@@ -22,8 +23,12 @@ class MultipleLinearRegression(ForecastModel):
                 model = model_dict['model']
                 feature_order = model_dict['feature_order']
             except FileNotFoundError:
-                df_X = ForecastModel.create_features_from_date(df.index.to_series())
-                df_y = df[station]
+                # Exclure les indices interpolés pour la station
+                interpolated_indices = get_interpolated_indices(df[station], output_type='mask')
+                df_filtered = df.drop(index=interpolated_indices)
+
+                df_X = ForecastModel.create_features_from_date(df_filtered.index.to_series())
+                df_y = df_filtered[station]
 
                 df_X = pd.get_dummies(df_X, columns=['hour', 'day_of_week', 'day_of_month', 'is_weekend', 'is_sunday'], drop_first=True)
 

@@ -4,12 +4,13 @@ from typing import Self
 from sklearn.decomposition import PCA
 from data.city.load_cities import City
 from data.prediction.forecast_model import ForecastModel, PATH_MODEL
+from data.data import get_interpolated_indices
 from os import makedirs
 
 class XGBoostPCA(ForecastModel):
     name = 'XGBoostPCA'
 
-    def __init__(self: Self, city: City, train_size: float = 0.7, n_components: int = 5) -> None:
+    def __init__(self: Self, city: City, train_size: float = 0.7, n_components: int = 4) -> None:
         super().__init__(city, train_size)
         makedirs(f'{PATH_MODEL}{self.name}', exist_ok=True)
         self.models = {}
@@ -24,13 +25,16 @@ class XGBoostPCA(ForecastModel):
                 model = model_dict['model']
                 pca = model_dict['pca']
             except FileNotFoundError:
-                df_X = ForecastModel.create_features_from_date(df.index.to_series())
-                df_y = df[station]
+                interpolated_indices = get_interpolated_indices(df[station], output_type='mask')
+                df_filtered = df.drop(index=interpolated_indices)
+                
+                df_X = ForecastModel.create_features_from_date(df_filtered.index.to_series())
+                df_y = df_filtered[station]
 
                 pca = PCA(n_components=self.n_components)
                 X_pca = pca.fit_transform(df_X)
 
-                model = xgb.XGBRegressor(n_estimators=100, max_depth=5, learning_rate=0.1)
+                model = xgb.XGBRegressor(n_estimators=100, max_depth=10, learning_rate=0.1)
                 model.fit(X_pca, df_y)
 
                 model_dict = {'model': model, 'pca': pca}
