@@ -138,6 +138,7 @@ def modal_station():
                 id='metrics_modal_compare_graph',
                 figure=figures.compare_graph_metrics(
                     df_metrics,
+                    (CITY.df_hours['date'].iloc[0].date(), CITY.df_hours['date'].iloc[first_forecast_length - 1].date()),
                     first_station
                 )
             )
@@ -182,7 +183,8 @@ def modal_global():
             dcc.Graph(
                 id='metrics_modal_compare_graph_global',
                 figure=figures.compare_graph_metrics(
-                    df_metrics
+                    df_metrics,
+                    (CITY.df_hours['date'].iloc[0].date(), CITY.df_hours['date'].iloc[first_forecast_length - 1].date())
                 )
             )
         ]
@@ -226,7 +228,7 @@ def update_modal(in_btn_nclicks, state_date, state_forecast_length):
     df_metrics = df_metrics.groupby(['model', 'metric']).mean().reset_index()
     df_metrics['metric'] = df_metrics['metric'].str.upper()
 
-    modal_graph = figures.compare_graph_metrics(df_metrics)
+    modal_graph = figures.compare_graph_metrics(df_metrics, (data_index[0].date(), data_index[-1].date()))
 
     return modal_is_open, modal_graph
 
@@ -282,6 +284,7 @@ def update_metric(in_marker, in_date, in_forecast_length, in_metric, in_model, s
         modal_is_open = True
         modal_graph = figures.compare_graph_metrics(
             df_metrics,
+            (data_index[0].date(), data_index[-1].date()),
             triggeredId['code_name']
         )
 
