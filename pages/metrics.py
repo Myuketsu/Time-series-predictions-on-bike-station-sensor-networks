@@ -6,7 +6,7 @@ import dash_mantine_components as dmc
 
 from view import map_factory
 import view.figures as figures
-from data.prediction.methods import ForecastModel, FORECAST_MODELS, FORECAST_LENGTHS
+from data.prediction.methods import ForecastModel, FORECAST_MODELS, FORECAST_LENGTHS, PREDICTED_DATA
 from data.city.load_cities import CITY
 
 register_page(__name__, path='/metrics', name='Métriques', title='TER', order=6,
@@ -78,13 +78,13 @@ def metrics_map_viewport():
     metrics_map = map_factory.viewport_map(CITY, 'metrics_map')
     map_factory.add_to_children(metrics_map, [map_factory.get_colorbar((0, 0.75))])
 
-    first_model = list(FORECAST_MODELS.values())[0]
+    first_df_predicted_data = list(PREDICTED_DATA.values())[0]
     first_date = Series(1, index=[CITY.df_hours['date'].iloc[0]])
     first_forecast_length = list(FORECAST_LENGTHS.values())[0]
     
     metrics = {
         station_name: ForecastModel.get_metrics(
-            predicted=first_model.predict(station_name, first_date, first_forecast_length),
+            predicted=first_df_predicted_data[station_name].iloc[:first_forecast_length],
             reality=CITY.df_hours[station_name].iloc[:first_forecast_length],
             metrics='mse'
         ) for station_name in CITY.df_coordinates['code_name']
@@ -100,9 +100,9 @@ def modal():
     model_list = []
     metric_list = []
     metric_value_list = []
-    for model_name, model in FORECAST_MODELS.items():
+    for model_name, df_predicted_data in PREDICTED_DATA.items():
         metrics = ForecastModel.get_metrics(
-            predicted=model.predict(first_station, first_date, first_forecast_length),
+            predicted=df_predicted_data[first_station].iloc[:first_forecast_length],
             reality=CITY.df_hours[first_station].iloc[:first_forecast_length],
             metrics='all'
         )
@@ -170,9 +170,9 @@ def update_metric(in_marker, in_date, in_forecast_length, in_metric, in_model, s
         model_list = []
         metric_list = []
         metric_value_list = []
-        for model_name, model in FORECAST_MODELS.items():
+        for model_name, df_predicted_data in PREDICTED_DATA.items():
             metrics = ForecastModel.get_metrics(
-                predicted=model.predict(triggeredId['code_name'], Series(1, index=[in_date]), in_forecast_length),
+                predicted=df_predicted_data[triggeredId['code_name']].loc[data_index],
                 reality=FORECAST_MODELS[in_model].df_dataset[triggeredId['code_name']].loc[data_index],
                 metrics='all'
             )
@@ -193,7 +193,7 @@ def update_metric(in_marker, in_date, in_forecast_length, in_metric, in_model, s
         data_index = date_range(start=in_date, periods=in_forecast_length, freq='1h')
         metrics = {
             station_name: ForecastModel.get_metrics(
-                predicted=FORECAST_MODELS[in_model].predict(station_name, Series(1, index=[in_date]), in_forecast_length),
+                predicted=PREDICTED_DATA[in_model][station_name].loc[data_index],
                 reality=FORECAST_MODELS[in_model].df_dataset[station_name].loc[data_index],
                 metrics=in_metric
             ) for station_name in CITY.df_coordinates['code_name']

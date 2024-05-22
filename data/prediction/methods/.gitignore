@@ -3,3 +3,4 @@ MultipleLinearRegression
 RandomForest
 XGBoost
 XGBoostPCA
+predicted_data.pkl

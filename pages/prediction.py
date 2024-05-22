@@ -13,6 +13,7 @@ import pandas as pd
 
 FORECAST_MODELS = prediction_method.FORECAST_MODELS
 FORECAST_LENGTHS = prediction_method.FORECAST_LENGTHS
+PREDICTED_DATA = prediction_method.PREDICTED_DATA
 
 register_page(__name__, path='/prediction', name='Prédictions', title='TER', order=5,
               category='Prédictions', icon='clarity:bell-curve-line')
@@ -265,8 +266,7 @@ def update_main_graph(station, start_date, forecast_length):
     reality_data = FORECAST_MODELS['XGBoost'].df_dataset[station].loc[data_index]
 
     predictions = [
-        model.predict(station, pd.Series(1, index=[start_date]), forecast_length)
-        for model in FORECAST_MODELS.values()
+        df_predicted_data[station].loc[data_index].rename(name) for name, df_predicted_data in PREDICTED_DATA.items()
     ]
 
     fig = figures.main_graph_prediction(
