@@ -1,18 +1,17 @@
-import os
-import joblib
 import pandas as pd
 import xgboost as xgb
 from typing import Self
 from sklearn.decomposition import PCA
 from data.city.load_cities import City
 from data.prediction.forecast_model import ForecastModel
+from os import makedirs
 
 class XGBoostPCA(ForecastModel):
     name = 'XGBoostPCA'
 
     def __init__(self: Self, city: City, train_size: float = 0.7, n_components: int = 5) -> None:
         super().__init__(city, train_size)
-        os.makedirs(self.name, exist_ok=True)
+        makedirs(self.name, exist_ok=True)
         self.models = {}
         self.n_components = n_components
 
