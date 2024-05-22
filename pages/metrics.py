@@ -3,12 +3,9 @@ from dash import register_page, callback, no_update
 
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
-from dash import dcc
 
-import data.data as data
-import view.figures as figures
 from view import map_factory
-import data.prediction.methods as prediction_method
+from data.prediction.methods import ForecastModel, FORECAST_MODELS, FORECAST_LENGTHS
 from data.city.load_cities import CITY
 
 register_page(__name__, path='/metrics', name='Métriques', title='TER', order=6,
@@ -40,13 +37,10 @@ def options():
                 style={'width': 200}
             ),
             dmc.Select(
-                label=dmc.Text('Période (prédiction / contexte)', weight=700),
+                label=dmc.Text('Période de prédiction', weight=700),
                 placeholder='Select one',
-                value=168,
-                data=[
-                    {'value': 24, 'label': '1 jour / 1 semaine'},
-                    {'value': 168, 'label': '1 semaine / 1 mois'}
-                ],
+                value=list(FORECAST_LENGTHS.values())[0],
+                data=[{'value': v, 'label': l} for l, v in FORECAST_LENGTHS.items()],
                 id='metrics_options_select'
             ),
             html.Div(
@@ -66,9 +60,9 @@ def options():
                 [
                     dmc.Text('Choix du modèle de prédiction', weight=700, size=14, color='rgb(33, 37, 41)'),
                     dmc.SegmentedControl(
-                        value=prediction_method.PREDICTION_METHODS[0].name,
+                        value=list(FORECAST_MODELS.keys())[0],
                         radius='md',
-                        data=[method.name for method in prediction_method.PREDICTION_METHODS],
+                        data=list(FORECAST_MODELS.keys()),
                         id='metrics_options_segmented',
                     )
                 ],
@@ -83,6 +77,12 @@ def metrics_map():
     metrics_map = map_factory.viewport_map(CITY, 'metrics_map')
     map_factory.add_to_children(metrics_map, [map_factory.get_colorbar((0, 0.5))])
 
-    metrics = {station_name: prediction_method.PREDICTION_METHODS[0].predict() for station_name in }
+    metrics = {
+        station_name: ForecastModel.get_metrics(
+            predicted=list(FORECAST_MODELS.values())[0].predict(station_name, ),
+            reality=list(FORECAST_MODELS.values())[0],
+            metrics='mse'
+        ) for station_name in CITY.df_coordinates['code_name']
+    }
     map_factory.add_to_children(metrics_map, map_factory.get_metric_markers(CITY, 'mse', metrics, type_marker='metric_marker'))
     return metrics_map

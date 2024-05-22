@@ -12,7 +12,7 @@ class RandomForestPredictor(ForecastModel):
 
     def __init__(self: Self, city: City, train_size: float = 0.7) -> None:
         super().__init__(city, train_size)
-        self.models = {}
+        self.models: dict[str, RandomForestRegressor] = {}
         makedirs(self.name, exist_ok=True)
 
     def train(self: Self) -> None:

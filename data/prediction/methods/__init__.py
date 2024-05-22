@@ -12,6 +12,7 @@ from data.city.load_cities import CITY
 # --- INITIALISATION ---
 
 TRAIN_SIZE = 0.7
+FORECAST_LENGTHS: dict[str, int] = {'1 semaine': 168, '1 jour': 24}
 
 __MODELS: list[ForecastModel] = [
     PredictByMean,
@@ -23,7 +24,7 @@ __MODELS: list[ForecastModel] = [
 ]
 
 FORECAST_MODELS: dict[str, ForecastModel] = {
-    method.name: method(city=CITY, train_size=TRAIN_SIZE) for method in __MODELS
+    model.name: model(city=CITY, train_size=TRAIN_SIZE) for model in __MODELS
 }
 
 for forecast_model in FORECAST_MODELS.values():
