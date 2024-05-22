@@ -1,8 +1,8 @@
 from data.prediction.methods.mean_predictor import PredictByMean
 from data.prediction.methods.XGBoost import XGBoost
-from data.prediction.methods.XGBoostACP import PredictByXGBoostWithPCA
+from data.prediction.methods.XGBoostACP import XGBoostPCA
 from data.prediction.methods.PCApredictor import PredictByPCA
-from data.prediction.methods.MLR import PredictByMultipleLinearRegression
+from data.prediction.methods.MLR import MultipleLinearRegression
 from data.prediction.methods.RandomForest import RandomForestPredictor
 
 from data.prediction.forecast_model import ForecastModel
@@ -18,8 +18,8 @@ __MODELS: list[ForecastModel] = [
     PredictByMean,
     PredictByPCA,
     XGBoost,
-    PredictByXGBoostWithPCA,
-    PredictByMultipleLinearRegression,
+    XGBoostPCA,
+    MultipleLinearRegression,
     RandomForestPredictor
 ]
 
