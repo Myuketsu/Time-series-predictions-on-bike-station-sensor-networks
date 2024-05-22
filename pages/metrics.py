@@ -87,7 +87,9 @@ def options():
 
 def metrics_map_viewport():
     metrics_map = map_factory.viewport_map(CITY, 'metrics_map')
-    map_factory.add_to_children(metrics_map, [map_factory.get_colorbar((0, 0.6))])
+
+    colorscale = ['blue', 'green', 'yellow', 'orange', 'red']
+    map_factory.add_to_children(metrics_map, [map_factory.get_colorbar((0, 1.0), colorscale)])
 
     first_df_predicted_data = list(PREDICTED_DATA.values())[0]
     first_forecast_length = list(FORECAST_LENGTHS.values())[0]

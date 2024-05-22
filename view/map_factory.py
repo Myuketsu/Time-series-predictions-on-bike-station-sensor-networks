@@ -163,7 +163,7 @@ def get_edit_control() -> dl.FeatureGroup:
         ]
     )
 
-def get_colorbar(colorbar_range: tuple[int]) -> dl.Colorbar:
+def get_colorbar(colorbar_range: tuple[int], custom_colorscale: list=None) -> dl.Colorbar:
     """
     Generate a color bar for visualizing a color scale.
 
@@ -176,7 +176,7 @@ def get_colorbar(colorbar_range: tuple[int]) -> dl.Colorbar:
     - dl.Colorbar: A Colorbar component configured based on the provided parameters.
     """
     return dl.Colorbar(
-        colorscale=['blue', 'yellow'],
+        colorscale=['blue', 'yellow'] if custom_colorscale is None else custom_colorscale,
         width=25,
         height=300,
         max=colorbar_range[1],
@@ -206,7 +206,7 @@ def get_metric_markers(city: City, metric_name: str, metrics: dict[str, dict[str
     children, fill_color = [], []
     for station_name, metric in metrics.items():
         children.append([dl.Tooltip(f'{station_name}: {metric_name.upper()} {metric[metric_name]:.3f}')])
-        fill_color.append(color.find_color_between(color.normalize_value(metric[metric_name], 0, 0.6)))
+        fill_color.append(color.find_color_between(color.normalize_value(metric[metric_name], 0, 1.0), is_metric=True))
 
     return get_circle_markers(
         city=city,
