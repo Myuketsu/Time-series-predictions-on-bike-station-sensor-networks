@@ -8,8 +8,8 @@ from data.prediction.forecast_model import ForecastModel
 class PredictByMean(ForecastModel):
     name = 'Moyenne'
 
-    def __init__(self: Self, city: City, prediction_length: int, train_size: float=0.7) -> None:
-        super().__init__(city, prediction_length, train_size)
+    def __init__(self: Self, city: City, train_size: float=0.7) -> None:
+        super().__init__(city, train_size)
 
     def train(self: Self) -> None:
         df = self.train_dataset.copy()
@@ -22,14 +22,11 @@ class PredictByMean(ForecastModel):
         
         self.model: pd.DataFrame = df.groupby(['days', 'hours'], observed=False).mean()
 
-    def predict(self: Self, selected_stations: str, data: pd.Series) -> pd.Series:
-        serie = self.model[selected_stations]
+    def predict(self: Self, selected_station: str, data: pd.Series, forecast_length: int) -> pd.Series:
+        serie = self.model[selected_station]
         serie.name = PredictByMean.name
 
-        # On doit ré-indexer les données dans l'ordre des données passé en paramètre
-        # ex: la semaine de données commence par Vendredi, il faut décaler toutes les valeurs de la prédiction (Car commence Lundi 00:00) 
-        # pour que la première soit celle de Vendredi 00:00
-        data_index = ForecastModel.get_DatetimeIndex_from_Series(data, self.prediction_length)
+        data_index = ForecastModel.get_DatetimeIndex_forecasting(data, forecast_length)
         tmp_data_index = data_index.to_series().copy().to_frame()
         tmp_data_index['days'] = tmp_data_index.index.day_name()
         tmp_data_index['hours'] = tmp_data_index.index.hour
