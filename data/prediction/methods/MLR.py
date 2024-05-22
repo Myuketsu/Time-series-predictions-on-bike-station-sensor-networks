@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from typing import Self
 from data.city.load_cities import City
-from data.prediction.forecast_model import ForecastModel
+from data.prediction.forecast_model import ForecastModel, PATH_MODEL
 from os import makedirs
 
 class MultipleLinearRegression(ForecastModel):
@@ -10,7 +10,7 @@ class MultipleLinearRegression(ForecastModel):
 
     def __init__(self: Self, city: City, train_size: float = 0.7) -> None:
         super().__init__(city, train_size)
-        makedirs(self.name, exist_ok=True)
+        makedirs(f'{PATH_MODEL}{self.name}', exist_ok=True)
         self.models = {}
 
     def train(self: Self) -> None:
@@ -25,7 +25,7 @@ class MultipleLinearRegression(ForecastModel):
                 df_X = ForecastModel.create_features_from_date(df.index.to_series())
                 df_y = df[station]
 
-                df_X = pd.get_dummies(df_X, columns=['hour', 'day_of_week', 'day_of_month', 'month', 'is_weekend', 'is_sunday'], drop_first=True)
+                df_X = pd.get_dummies(df_X, columns=['hour', 'day_of_week', 'day_of_month', 'is_weekend', 'is_sunday'], drop_first=True)
 
                 feature_order = df_X.columns.tolist()
 
@@ -48,7 +48,7 @@ class MultipleLinearRegression(ForecastModel):
         data_index = ForecastModel.get_DatetimeIndex_forecasting(data, forecast_length)
         future = ForecastModel.create_features_from_date(data_index.to_series())
 
-        future = pd.get_dummies(future, columns=['hour', 'day_of_week', 'day_of_month', 'month', 'is_weekend', 'is_sunday'], drop_first=True)
+        future = pd.get_dummies(future, columns=['hour', 'day_of_week', 'day_of_month', 'is_weekend', 'is_sunday'], drop_first=True)
 
         for col in feature_order:
             if col not in future.columns:

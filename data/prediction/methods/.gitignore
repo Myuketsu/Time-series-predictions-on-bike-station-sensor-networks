@@ -1,8 +1,5 @@
 # Creer un dossier pour chaque modele
-ProphetModels
-RidgeRandomForestModels
-XGBoostModels
-XGBoostPCAModels
-LightGBMModels
-RFModels
-MLRModels
+MultipleLinearRegression
+RandomForest
+XGBoost
+XGBoostPCA

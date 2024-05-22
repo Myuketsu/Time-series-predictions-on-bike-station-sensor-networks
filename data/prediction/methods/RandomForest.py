@@ -5,7 +5,7 @@ from os import makedirs
 from typing import Self
 
 from data.city.load_cities import City
-from data.prediction.forecast_model import ForecastModel
+from data.prediction.forecast_model import ForecastModel, PATH_MODEL
 
 class RandomForestPredictor(ForecastModel):
     name = 'RandomForest'
@@ -13,7 +13,7 @@ class RandomForestPredictor(ForecastModel):
     def __init__(self: Self, city: City, train_size: float = 0.7) -> None:
         super().__init__(city, train_size)
         self.models: dict[str, RandomForestRegressor] = {}
-        makedirs(self.name, exist_ok=True)
+        makedirs(f'{PATH_MODEL}{self.name}', exist_ok=True)
 
     def train(self: Self) -> None:
         df = self.train_dataset.copy()
@@ -22,7 +22,7 @@ class RandomForestPredictor(ForecastModel):
             try:
                 current_model: RandomForestRegressor = self.load_model(station)
             except FileNotFoundError:
-                df_X = ForecastModel.create_features_from_date(df['date'])
+                df_X = ForecastModel.create_features_from_date(df.index.to_series())
                 df_y = df[station]
 
                 current_model = RandomForestRegressor(n_estimators=12, max_depth=12, n_jobs=-1)

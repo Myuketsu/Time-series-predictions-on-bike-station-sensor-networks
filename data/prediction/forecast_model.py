@@ -10,6 +10,8 @@ from data.data import get_interpolated_indices
 
 from abc import ABC, abstractmethod
 
+PATH_MODEL: str = './data/prediction/methods/'
+
 class ForecastModel(ABC):
     name = 'BaseModel'
     
@@ -36,10 +38,10 @@ class ForecastModel(ABC):
         return X_train, X_test, y_train, y_test
     
     def save_model(self: Self, model: Any, station_name: str, compress: int=3) -> None:
-        joblib.dump(model, f'./{self.name}/{station_name}.pkl', compress=compress)
+        joblib.dump(model, f'{PATH_MODEL}{self.name}/{station_name}.pkl', compress=compress)
 
     def load_model(self: Self, station_name: str) -> Any:
-        return joblib.load(f'./{self.name}/{station_name}.pkl')
+        return joblib.load(f'{PATH_MODEL}{self.name}/{station_name}.pkl')
 
     @abstractmethod
     def train(self: Self) -> None:

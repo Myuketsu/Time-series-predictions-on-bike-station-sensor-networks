@@ -3,7 +3,7 @@ import xgboost as xgb
 from typing import Self
 from sklearn.decomposition import PCA
 from data.city.load_cities import City
-from data.prediction.forecast_model import ForecastModel
+from data.prediction.forecast_model import ForecastModel, PATH_MODEL
 from os import makedirs
 
 class XGBoostPCA(ForecastModel):
@@ -11,7 +11,7 @@ class XGBoostPCA(ForecastModel):
 
     def __init__(self: Self, city: City, train_size: float = 0.7, n_components: int = 5) -> None:
         super().__init__(city, train_size)
-        makedirs(self.name, exist_ok=True)
+        makedirs(f'{PATH_MODEL}{self.name}', exist_ok=True)
         self.models = {}
         self.n_components = n_components
 

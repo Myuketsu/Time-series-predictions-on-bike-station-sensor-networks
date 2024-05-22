@@ -5,14 +5,14 @@ from os import makedirs
 from typing import Self
 
 from data.city.load_cities import City
-from data.prediction.forecast_model import ForecastModel
+from data.prediction.forecast_model import ForecastModel, PATH_MODEL
 
 class XGBoost(ForecastModel):
     name = 'XGBoost'
 
     def __init__(self: Self, city: City, train_size: float = 0.7) -> None:
         super().__init__(city, train_size)
-        makedirs(self.name, exist_ok=True)
+        makedirs(f'{PATH_MODEL}{self.name}', exist_ok=True)
         self.models = {}
 
     def train(self: Self) -> None:
@@ -22,7 +22,7 @@ class XGBoost(ForecastModel):
             try:
                 current_model = self.load_model(station)
             except FileNotFoundError:
-                df_X = ForecastModel.create_features_from_date(df['date'])
+                df_X = ForecastModel.create_features_from_date(df.index.to_series())
                 df_y = df[station]
 
                 current_model = XGBRegressor(n_estimators=50, max_depth=9, learning_rate=0.05)
