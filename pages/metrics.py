@@ -1,6 +1,7 @@
 from dash import html, dcc, Input, Output, State
 from dash import register_page, callback, no_update, ctx, no_update, ALL
 from pandas import Series, date_range, DataFrame
+from dash_iconify import DashIconify
 
 import dash_mantine_components as dmc
 
@@ -19,7 +20,8 @@ def layout():
         [
             metrics_map_viewport(),
             options(),
-            modal()
+            modal_station(),
+            modal_global()
         ],
         id='metrics_layout'
     )
@@ -27,6 +29,15 @@ def layout():
 def options():
     return html.Div(
         [
+            dmc.Button(
+                'MÉTRIQUES GLOBALES',
+                id='metrics_global_button',
+                n_clicks=0,
+                variant='gradient',
+                gradient={'from': 'indigo', 'to': 'cyan'},
+                leftIcon=DashIconify(icon='nimbus:stats', width=20),
+            ),
+            html.Div(className='prediction_vertical_line'),
             dmc.DatePicker(
                 id='metrics_options_date_picker',
                 locale='fr',
@@ -36,7 +47,7 @@ def options():
                 minDate=CITY.df_hours['date'].iloc[0],
                 label=dmc.Text('Début date de prédiction', weight=700),
                 inputFormat='dddd, D MMMM YYYY',
-                style={'width': 200}
+                style={'width': 170}
             ),
             dmc.Select(
                 label=dmc.Text('Période de prédiction', weight=700),
@@ -76,10 +87,9 @@ def options():
 
 def metrics_map_viewport():
     metrics_map = map_factory.viewport_map(CITY, 'metrics_map')
-    map_factory.add_to_children(metrics_map, [map_factory.get_colorbar((0, 0.75))])
+    map_factory.add_to_children(metrics_map, [map_factory.get_colorbar((0, 0.6))])
 
     first_df_predicted_data = list(PREDICTED_DATA.values())[0]
-    first_date = Series(1, index=[CITY.df_hours['date'].iloc[0]])
     first_forecast_length = list(FORECAST_LENGTHS.values())[0]
     
     metrics = {
@@ -92,9 +102,8 @@ def metrics_map_viewport():
     map_factory.add_to_children(metrics_map, map_factory.get_metric_markers(CITY, 'mse', metrics, type_marker='metric_marker'))
     return metrics_map
 
-def modal():
+def modal_station():
     first_station = CITY.df_coordinates['code_name'].iloc[0]
-    first_date = Series(1, index=[CITY.df_hours['date'].iloc[0]])
     first_forecast_length = list(FORECAST_LENGTHS.values())[0]
     
     model_list = []
@@ -128,12 +137,98 @@ def modal():
             dcc.Graph(
                 id='metrics_modal_compare_graph',
                 figure=figures.compare_graph_metrics(
-                    first_station,
+                    df_metrics,
+                    first_station
+                )
+            )
+        ]
+    )
+
+def modal_global():
+    first_forecast_length = list(FORECAST_LENGTHS.values())[0]
+    
+    model_list = []
+    metric_list = []
+    metric_value_list = []
+    for model_name, df_predicted_data in PREDICTED_DATA.items():
+        for station_name in CITY.df_coordinates['code_name']:
+            metrics = ForecastModel.get_metrics(
+                predicted=df_predicted_data[station_name].iloc[:first_forecast_length],
+                reality=CITY.df_hours[station_name].iloc[:first_forecast_length],
+                metrics='all'
+            )
+            for metric_name, metric_value in metrics.items():
+                model_list.append(model_name)
+                metric_list.append(metric_name)
+                metric_value_list.append(metric_value)
+    df_metrics = DataFrame({'model': model_list, 'metric': metric_list, 'metric_value': metric_value_list})
+    df_metrics = df_metrics.groupby(['model', 'metric']).mean().reset_index()
+    df_metrics['metric'] = df_metrics['metric'].str.upper()
+    df_metrics = df_metrics.sort_values(['model', 'metric'])
+
+    return dmc.Modal(
+        title=dmc.Text(
+            'Performance globale des modèles',
+            transform='uppercase',
+            variant='gradient',
+            gradient={'from': '#36454f', 'to': '#003153'},
+            weight=700,
+            fz=20
+        ),
+        id='metrics_modal_global',
+        zIndex=10_000,
+        size='80%',
+        children=[
+            dcc.Graph(
+                id='metrics_modal_compare_graph_global',
+                figure=figures.compare_graph_metrics(
                     df_metrics
                 )
             )
         ]
     )
+
+@callback(
+    [
+        Output('metrics_modal_global', 'opened'),
+        Output('metrics_modal_compare_graph_global', 'figure')
+    ],
+    [
+        Input('metrics_global_button', 'n_clicks')
+    ],
+    [
+        State('metrics_options_date_picker', 'value'),
+        State('metrics_options_select', 'value')
+    ],
+    prevent_initial_call=True
+)
+def update_modal(in_btn_nclicks, state_date, state_forecast_length):
+    modal_is_open = True
+    modal_graph = no_update
+
+    data_index = date_range(start=state_date, periods=state_forecast_length, freq='1h')
+    
+    model_list = []
+    metric_list = []
+    metric_value_list = []
+    for model_name, df_predicted_data in PREDICTED_DATA.items():
+        for station_name in CITY.df_coordinates['code_name']:
+            metrics = ForecastModel.get_metrics(
+                predicted=df_predicted_data[station_name].loc[data_index],
+                reality=FORECAST_MODELS[model_name].df_dataset[station_name].loc[data_index],
+                metrics='all'
+            )
+            for metric_name, metric_value in metrics.items():
+                model_list.append(model_name)
+                metric_list.append(metric_name)
+                metric_value_list.append(metric_value)
+    df_metrics = DataFrame({'model': model_list, 'metric': metric_list, 'metric_value': metric_value_list})
+    df_metrics = df_metrics.groupby(['model', 'metric']).mean().reset_index()
+    df_metrics['metric'] = df_metrics['metric'].str.upper()
+
+    modal_graph = figures.compare_graph_metrics(df_metrics)
+
+    return modal_is_open, modal_graph
 
 @callback(
     [
@@ -182,11 +277,12 @@ def update_metric(in_marker, in_date, in_forecast_length, in_metric, in_model, s
                 metric_value_list.append(metric_value)
         df_metrics = DataFrame({'model': model_list, 'metric': metric_list, 'metric_value': metric_value_list})
         df_metrics['metric'] = df_metrics['metric'].str.upper()
+        df_metrics = df_metrics.sort_values(['model', 'metric'])
 
         modal_is_open = True
         modal_graph = figures.compare_graph_metrics(
-            triggeredId['code_name'],
-            df_metrics
+            df_metrics,
+            triggeredId['code_name']
         )
 
     if triggeredId in ['metrics_options_date_picker', 'metrics_options_select', 'metrics_options_radiogroup', 'metrics_options_segmented']:
