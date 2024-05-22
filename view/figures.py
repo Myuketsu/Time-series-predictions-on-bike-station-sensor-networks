@@ -352,13 +352,22 @@ def main_graph_prediction(station_name: str, methods: list[pd.Series], reality_d
         data_frame=df_predict
     )
 
-    fig.update_layout(
-        title=f"Prédiction du {methods[0].index[0].strftime('%d-%m-%Y')} au {methods[0].index[-1].strftime('%d-%m-%Y')} de la station {station_name}",
-        xaxis_title='Date',
-        yaxis_title='Taux d\'occupation de la station (%)',
-        legend_title='Entraînement <b>avec</b> interpolation',
-        hovermode='x'
-    )
+    if methods:
+        fig.update_layout(
+            title=f"Prédiction du {methods[0].index[0].strftime('%d-%m-%Y')} au {methods[0].index[-1].strftime('%d-%m-%Y')} de la station {station_name}",
+            xaxis_title='Date',
+            yaxis_title='Taux d\'occupation de la station (%)',
+            legend_title='Entraînement <b>avec</b> interpolation',
+            hovermode='x'
+        )
+    else:
+        fig.update_layout(
+            title=f"Prédiction de la station {station_name}",
+            xaxis_title='Date',
+            yaxis_title='Taux d\'occupation de la station (%)',
+            legend_title='Entraînement <b>avec</b> interpolation',
+            hovermode='x'
+        )
 
     return fig
 

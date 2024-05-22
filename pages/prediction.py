@@ -3,12 +3,16 @@ from dash import register_page, callback, no_update
 
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
-from dash import dcc
 
 import data.data as data
 import view.figures as figures
 import data.prediction.methods as prediction_method
 from data.city.load_cities import CITY
+
+import pandas as pd
+
+FORECAST_MODELS = prediction_method.FORECAST_MODELS
+FORECAST_LENGTHS = prediction_method.FORECAST_LENGTHS
 
 register_page(__name__, path='/prediction', name='Prédictions', title='TER', order=5,
               category='Prédictions', icon='clarity:bell-curve-line')
@@ -29,7 +33,9 @@ def form():
         [
             get_station_selector(),
             html.Div(className='prediction_vertical_line'),
-            get_date_range_picker(),
+            get_forecast_date_picker(),
+            html.Div(className='prediction_vertical_line'),
+            get_forecast_length_selector(),
             html.Div(className='prediction_vertical_line'),
             dmc.Button(
                 'DATASET',
@@ -60,36 +66,38 @@ def get_station_selector():
         id='prediction_station_selector'
     )
 
-def get_date_range_picker():
+def get_forecast_date_picker():
     return html.Div(
         [
             dmc.DatePicker(
-                id='prediction_date_picker_start',
+                id='prediction_date_picker',
                 locale='fr',
                 value=CITY.df_hours['date'].iloc[0],
                 clearable=False,
-                maxDate=CITY.df_hours['date'].iloc[-(prediction_method.CONTEXT_LENGTH + prediction_method.PREDICTION_LENGTH - 24)],
+                maxDate=CITY.df_hours['date'].iloc[-1],
                 minDate=CITY.df_hours['date'].iloc[0],
-                label=dcc.Markdown('**Premier** jour de la plage de données de contexte'),
+                label=dcc.Markdown('**Date de début de la prédiction**'),
                 inputFormat='dddd, D MMMM YYYY - 00:00',
-                style={'width': 320}
-            ),
-            dmc.Divider(
-                id='prediction_divider_date_range',
-                label=dcc.Markdown('Plage de données d\'**une semaine**'),
-                labelPosition='center'
-            ),
-            dmc.DatePicker(
-                id='prediction_date_picker_end',
-                locale='fr',
-                value=update_end_date(CITY.df_hours['date'].iloc[0])[0],
-                label=dcc.Markdown('**Dernier** jour de la plage de données de contexte'),
-                inputFormat='dddd, D MMMM YYYY - 23:00',
-                disabled=True,
                 style={'width': 320}
             )
         ],
-        id='prediction_date_range_picker'
+        id='forecast_date_picker'
+    )
+
+def get_forecast_length_selector():
+    first_key = list(FORECAST_LENGTHS.keys())[0]
+    first_value = FORECAST_LENGTHS[first_key]
+    return html.Div(
+        [
+            dmc.Select(
+                id='forecast_length_select',
+                label='Durée de la prédiction',
+                placeholder='Merci de sélectionner une durée...',
+                value=first_value,
+                data=[{'label': k, 'value': v} for k, v in FORECAST_LENGTHS.items()]
+            )
+        ],
+        id='forecast_length_selector'
     )
 
 def get_modal():
@@ -146,19 +154,19 @@ def get_dataset_distribution(pct: float):
                 [
                     html.Div(
                         dmc.Text(
-                            prediction_method.PREDICTION_METHODS[1].train_dataset.index[0].strftime('%d-%m-%Y'), size=9
+                            prediction_method.FORECAST_MODELS['XGBoost'].train_dataset.index[0].strftime('%d-%m-%Y'), size=9
                         ),
                         id='prediction_dataset_training_date_start'
                     ),
                     html.Div(
                         dmc.Text(
-                            prediction_method.PREDICTION_METHODS[1].train_dataset.index[-1].strftime('%d-%m-%Y'), size=9
+                            prediction_method.FORECAST_MODELS['XGBoost'].train_dataset.index[-1].strftime('%d-%m-%Y'), size=9
                         ),
                         id='prediction_dataset_training_date_end', style={'right': f'{100 - pct}%'}
                     ),
                     html.Div(
                         dmc.Text(
-                            prediction_method.PREDICTION_METHODS[1].test_dataset.index[-1].strftime('%d-%m-%Y'), size=9
+                            prediction_method.FORECAST_MODELS['XGBoost'].test_dataset.index[-1].strftime('%d-%m-%Y'), size=9
                         ),
                         id='prediction_dataset_test_date_end'
                     ),
@@ -197,16 +205,14 @@ def get_data_features():
     )
 
 def graph_area():
-    context_data = prediction_method.PREDICTION_METHODS[1].df_dataset[CITY.df_coordinates['code_name'].iloc[0]].iloc[:prediction_method.CONTEXT_LENGTH]
-    reality_data = prediction_method.PREDICTION_METHODS[1].df_dataset[CITY.df_coordinates['code_name'].iloc[0]].iloc[prediction_method.CONTEXT_LENGTH:prediction_method.CONTEXT_LENGTH + prediction_method.PREDICTION_LENGTH]
     return html.Div(
         [
             dcc.Graph(
                 id='prediction_main_graph',
                 figure=figures.main_graph_prediction(
                     station_name=CITY.df_coordinates['code_name'].iloc[0],
-                    methods=[method.predict(CITY.df_coordinates['code_name'].iloc[0], context_data) for method in prediction_method.PREDICTION_METHODS],
-                    reality_data=reality_data
+                    methods=[],
+                    reality_data=pd.Series(dtype=float)
                 ),
                 style={'width': '100%'}
             )
@@ -217,28 +223,9 @@ def graph_area():
 # --- CALLBACKS ---
 
 @callback(
-    [
-        Output('prediction_date_picker_end', 'value')
-    ],
-    [
-        Input('prediction_date_picker_start', 'value')
-    ],
-    prevent_initial_call=True
-)
-def update_end_date(date_start):
-    return (data.get_shifted_date(date_start, prediction_method.CONTEXT_LENGTH - 1), )
-
-
-@callback(
-    [
-        Output('prediction_modal', 'opened')
-    ],
-    [
-        Input('prediction_info_button', 'n_clicks')
-    ],
-    [
-        State('prediction_modal', 'opened')
-    ],
+    Output('prediction_modal', 'opened'),
+    Input('prediction_info_button', 'n_clicks'),
+    State('prediction_modal', 'opened'),
     prevent_initial_call=True
 )
 def update_modal(in_btn_nclicks, state_opened):
@@ -264,28 +251,28 @@ def update_modal(in_select):
     )
     return (fig, )
 
+
 @callback(
-    [
-        Output('prediction_main_graph', 'figure')
-    ],
+    Output('prediction_main_graph', 'figure'),
     [
         Input('prediction_station_select', 'value'),
-        Input('prediction_date_picker_start', 'value')
+        Input('prediction_date_picker', 'value'),
+        Input('forecast_length_select', 'value')
     ],
-    prevent_initial_call=True
 )
-def update_main_graph(in_select, in_start_date):
-    context_data = prediction_method.PREDICTION_METHODS[1].df_dataset[in_select].loc[
-        in_start_date:data.get_shifted_date(in_start_date, prediction_method.CONTEXT_LENGTH - 1)
-    ]
-    reality_data = prediction_method.PREDICTION_METHODS[1].df_dataset[in_select].loc[
-        data.get_shifted_date(in_start_date, prediction_method.CONTEXT_LENGTH):data.get_shifted_date(in_start_date, prediction_method.CONTEXT_LENGTH + prediction_method.PREDICTION_LENGTH - 1)
+def update_main_graph(station, start_date, forecast_length):
+    data_index = pd.date_range(start=start_date, periods=forecast_length, freq='h')
+    reality_data = FORECAST_MODELS['XGBoost'].df_dataset[station].loc[data_index]
+
+    predictions = [
+        model.predict(station, pd.Series(1, index=[start_date]), forecast_length)
+        for model in FORECAST_MODELS.values()
     ]
 
     fig = figures.main_graph_prediction(
-        station_name=in_select,
-        methods=[method.predict(in_select, context_data) for method in prediction_method.PREDICTION_METHODS],
+        station_name=station,
+        methods=predictions,
         reality_data=reality_data
     )
 
-    return (fig, )
+    return fig
