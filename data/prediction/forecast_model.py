@@ -61,7 +61,7 @@ class ForecastModel(ABC):
 
     @staticmethod
     def get_DatetimeIndex_forecasting(serie: pd.Series, prediction_length: int) -> pd.DatetimeIndex:
-        return pd.date_range(serie.index[-1], periods=prediction_length, freq='1h', inclusive='right')
+        return pd.date_range(serie.index[-1], periods=prediction_length, freq='1h', inclusive='left')
     
     @staticmethod
     def get_metrics(predicted: pd.Series, reality: pd.Series, metrics: tuple[str] | str='all', exclude_interpolation_weights: bool=True) -> dict[str, float]:

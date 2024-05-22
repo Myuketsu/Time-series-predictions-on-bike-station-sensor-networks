@@ -1,8 +1,8 @@
 from dash import html, dcc, Input, Output, State
 from dash import register_page, callback, no_update
+from pandas import Series
 
 import dash_mantine_components as dmc
-from dash_iconify import DashIconify
 
 from view import map_factory
 from data.prediction.methods import ForecastModel, FORECAST_MODELS, FORECAST_LENGTHS
@@ -30,9 +30,9 @@ def options():
                 locale='fr',
                 value=CITY.df_hours['date'].iloc[0],
                 clearable=False,
-                maxDate=CITY.df_hours['date'].iloc[-(prediction_method.CONTEXT_LENGTH + prediction_method.PREDICTION_LENGTH - 24)],
+                maxDate=CITY.df_hours['date'].iloc[-(list(FORECAST_LENGTHS.values())[0] - 24)],
                 minDate=CITY.df_hours['date'].iloc[0],
-                label=dmc.Text('Plage de données de contexte', weight=700),
+                label=dmc.Text('Début date de prédiction', weight=700),
                 inputFormat='dddd, D MMMM YYYY',
                 style={'width': 200}
             ),
@@ -68,7 +68,6 @@ def options():
                 ],
                 id='metrics_options_segmented_box'
             )
-            
         ],
         id='metrics_options'
     )
@@ -77,10 +76,14 @@ def metrics_map():
     metrics_map = map_factory.viewport_map(CITY, 'metrics_map')
     map_factory.add_to_children(metrics_map, [map_factory.get_colorbar((0, 0.5))])
 
+    first_model = list(FORECAST_MODELS.values())[0]
+    first_date = Series([CITY.df_hours['date'].iloc[0]])
+    first_forecast_length = list(FORECAST_LENGTHS.values())[0]
+    
     metrics = {
         station_name: ForecastModel.get_metrics(
-            predicted=list(FORECAST_MODELS.values())[0].predict(station_name, ),
-            reality=list(FORECAST_MODELS.values())[0],
+            predicted=first_model.predict(station_name, first_date, first_forecast_length),
+            reality=CITY.df_hours[station_name].iloc[:first_forecast_length],
             metrics='mse'
         ) for station_name in CITY.df_coordinates['code_name']
     }
