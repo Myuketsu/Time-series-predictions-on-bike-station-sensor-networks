@@ -206,7 +206,7 @@ def get_metric_markers(city: City, metric_name: str, metrics: dict[str, dict[str
     children, fill_color = [], []
     for station_name, metric in metrics.items():
         children.append([dl.Tooltip(f'{station_name}: {metric_name.upper()} {metric[metric_name]:.3f}')])
-        fill_color.append(color.find_color_between(color.normalize_value(metric[metric_name], 0, 0.5)))
+        fill_color.append(color.find_color_between(color.normalize_value(metric[metric_name], 0, 0.75)))
 
     return get_circle_markers(
         city=city,

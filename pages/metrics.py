@@ -1,10 +1,11 @@
 from dash import html, dcc, Input, Output, State
-from dash import register_page, callback, no_update
-from pandas import Series
+from dash import register_page, callback, no_update, ctx, no_update, ALL
+from pandas import Series, date_range, DataFrame
 
 import dash_mantine_components as dmc
 
 from view import map_factory
+import view.figures as figures
 from data.prediction.methods import ForecastModel, FORECAST_MODELS, FORECAST_LENGTHS
 from data.city.load_cities import CITY
 
@@ -16,8 +17,9 @@ register_page(__name__, path='/metrics', name='Métriques', title='TER', order=6
 def layout():
     return html.Div(
         [
-            metrics_map(),
-            options()
+            metrics_map_viewport(),
+            options(),
+            modal()
         ],
         id='metrics_layout'
     )
@@ -72,12 +74,12 @@ def options():
         id='metrics_options'
     )
 
-def metrics_map():
+def metrics_map_viewport():
     metrics_map = map_factory.viewport_map(CITY, 'metrics_map')
-    map_factory.add_to_children(metrics_map, [map_factory.get_colorbar((0, 0.5))])
+    map_factory.add_to_children(metrics_map, [map_factory.get_colorbar((0, 0.75))])
 
     first_model = list(FORECAST_MODELS.values())[0]
-    first_date = Series([CITY.df_hours['date'].iloc[0]])
+    first_date = Series(1, index=[CITY.df_hours['date'].iloc[0]])
     first_forecast_length = list(FORECAST_LENGTHS.values())[0]
     
     metrics = {
@@ -89,3 +91,122 @@ def metrics_map():
     }
     map_factory.add_to_children(metrics_map, map_factory.get_metric_markers(CITY, 'mse', metrics, type_marker='metric_marker'))
     return metrics_map
+
+def modal():
+    first_station = CITY.df_coordinates['code_name'].iloc[0]
+    first_date = Series(1, index=[CITY.df_hours['date'].iloc[0]])
+    first_forecast_length = list(FORECAST_LENGTHS.values())[0]
+    
+    model_list = []
+    metric_list = []
+    metric_value_list = []
+    for model_name, model in FORECAST_MODELS.items():
+        metrics = ForecastModel.get_metrics(
+            predicted=model.predict(first_station, first_date, first_forecast_length),
+            reality=CITY.df_hours[first_station].iloc[:first_forecast_length],
+            metrics='all'
+        )
+        for metric_name, metric_value in metrics.items():
+            model_list.append(model_name)
+            metric_list.append(metric_name)
+            metric_value_list.append(metric_value)
+    df_metrics = DataFrame({'model': model_list, 'metric': metric_list, 'metric_value': metric_value_list})
+
+    return dmc.Modal(
+        title=dmc.Text(
+            'Performance des modèles sur la station',
+            transform='uppercase',
+            variant='gradient',
+            gradient={'from': '#36454f', 'to': '#003153'},
+            weight=700,
+            fz=20
+        ),
+        id='metrics_modal',
+        zIndex=10_000,
+        size='80%',
+        children=[
+            dcc.Graph(
+                id='metrics_modal_compare_graph',
+                figure=figures.compare_graph_metrics(
+                    first_station,
+                    df_metrics
+                )
+            )
+        ]
+    )
+
+@callback(
+    [
+        Output('metrics_map', 'key'),
+        Output('metrics_map', 'children'),
+        Output('metrics_options_date_picker', 'maxDate'),
+        Output('metrics_modal', 'opened'),
+        Output('metrics_modal_compare_graph', 'figure'),
+    ],
+    [
+        Input({'type': 'metric_marker', 'code_name': ALL, 'index': ALL}, 'n_clicks'),
+        Input('metrics_options_date_picker', 'value'),
+        Input('metrics_options_select', 'value'),
+        Input('metrics_options_radiogroup', 'value'),
+        Input('metrics_options_segmented', 'value')
+    ],
+    [
+        State('metrics_map', 'children'),
+        State('metrics_map', 'key')
+    ],
+    prevent_initial_call=True
+)
+def update_metric(in_marker, in_date, in_forecast_length, in_metric, in_model, state_map_children, state_map_key):
+    triggeredId = ctx.triggered_id
+
+    map_children = no_update
+    date_picker_maxDate = no_update
+    modal_is_open = no_update
+    modal_graph = no_update
+
+    if isinstance(triggeredId, dict) and triggeredId['type'] == 'metric_marker':
+        data_index = date_range(start=in_date, periods=in_forecast_length, freq='1h')
+
+        model_list = []
+        metric_list = []
+        metric_value_list = []
+        for model_name, model in FORECAST_MODELS.items():
+            metrics = ForecastModel.get_metrics(
+                predicted=model.predict(triggeredId['code_name'], Series(1, index=[in_date]), in_forecast_length),
+                reality=FORECAST_MODELS[in_model].df_dataset[triggeredId['code_name']].loc[data_index],
+                metrics='all'
+            )
+            for metric_name, metric_value in metrics.items():
+                model_list.append(model_name)
+                metric_list.append(metric_name)
+                metric_value_list.append(metric_value)
+        df_metrics = DataFrame({'model': model_list, 'metric': metric_list, 'metric_value': metric_value_list})
+        df_metrics['metric'] = df_metrics['metric'].str.upper()
+
+        modal_is_open = True
+        modal_graph = figures.compare_graph_metrics(
+            triggeredId['code_name'],
+            df_metrics
+        )
+
+    if triggeredId in ['metrics_options_date_picker', 'metrics_options_select', 'metrics_options_radiogroup', 'metrics_options_segmented']:
+        data_index = date_range(start=in_date, periods=in_forecast_length, freq='1h')
+        metrics = {
+            station_name: ForecastModel.get_metrics(
+                predicted=FORECAST_MODELS[in_model].predict(station_name, Series(1, index=[in_date]), in_forecast_length),
+                reality=FORECAST_MODELS[in_model].df_dataset[station_name].loc[data_index],
+                metrics=in_metric
+            ) for station_name in CITY.df_coordinates['code_name']
+        }
+
+        map_children = map_factory.update_children(
+            map_children=state_map_children,
+            new_children=map_factory.get_metric_markers(CITY, in_metric, metrics, type_marker='metric_marker')
+        )
+    
+    if triggeredId == 'metrics_options_select':
+        date_picker_maxDate = CITY.df_hours['date'].iloc[-(in_forecast_length - 23)]
+    
+    new_map_key = (state_map_key or 0) + 1
+    
+    return new_map_key, map_children, date_picker_maxDate, modal_is_open, modal_graph

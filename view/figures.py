@@ -361,3 +361,21 @@ def main_graph_prediction(station_name: str, methods: list[pd.Series], reality_d
     )
 
     return fig
+
+def compare_graph_metrics(station_name: str, df_metrics: pd.DataFrame) -> go.Figure:
+    fig = px.bar(
+        data_frame=df_metrics,
+        x='model',
+        y='metric_value',
+        color='metric',
+        barmode='group'
+    )
+
+    fig.update_layout(
+        title=f'Comparaison des valeurs des différentes métriques pour chaque modèle sur la station : {station_name}',
+        xaxis_title='Modèles de prédiction',
+        yaxis_title='Valeur des métriques',
+        legend_title='Métriques'
+    )
+
+    return fig
