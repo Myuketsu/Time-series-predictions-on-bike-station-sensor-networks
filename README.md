@@ -22,7 +22,7 @@ You can view the site from the link when `app.py` is launched: http://127.0.0.1:
 
 ## 🔍 Data mining & Conclusion
 
-Nous avons réalisé une analyse détaillée et élaboré un rapport complet [[`Rapport.pdf`](https://github.com/Myuketsu/TER/blob/main/Rapport.pdf)] qui présente le sujet en profondeur. Ce rapport inclut une exploration exhaustive des données ainsi qu'une section dédiée aux prédictions.
+We have carried out a detailed analysis and produced a comprehensive report [[`RAPPORT.pdf`](https://github.com/Myuketsu/TER/blob/main/RAPPORT.pdf)] which presents the subject in depth. This report includes an exhaustive exploration of the data as well as a section dedicated to predictions.
 
 ## 👥 Authors
 - Théo Lavandier
