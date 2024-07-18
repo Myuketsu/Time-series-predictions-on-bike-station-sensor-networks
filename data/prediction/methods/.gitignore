@@ -1,0 +1,6 @@
+# Creer un dossier pour chaque modele
+MultipleLinearRegression
+RandomForest
+XGBoost
+XGBoostPCA
+predicted_data.pkl

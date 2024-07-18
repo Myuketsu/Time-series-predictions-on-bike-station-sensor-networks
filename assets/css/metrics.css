@@ -1,0 +1,36 @@
+#metrics_layout {
+    display: flex;
+    position: relative;
+}
+
+#metrics_map {
+    height: calc(100vh - var(--navbar_height));
+    width: 100%;
+}
+
+#metrics_options {
+    display: flex;
+    position: absolute;
+    justify-content: space-between;
+    align-items: center;
+    top: 5px;
+    left: 5px;
+    width: calc(100% - 10px);
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
+    padding: 5px;
+    z-index: 500;
+}
+
+#metrics_options_segmented_box {
+    display: flex;
+    flex-direction: column;
+}
+
+#metrics_options_select {
+    width: 145px;
+}
+
+.mantine-Group-root {
+    padding-top: 3px;
+}

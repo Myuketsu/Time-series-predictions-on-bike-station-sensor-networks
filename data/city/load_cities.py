@@ -10,8 +10,13 @@ BASE_FILENAME_COORDINATES = 'coordinates_'
 class City:
     def __init__(self, name: str, df_hours: pd.DataFrame, df_coordinates: pd.DataFrame) -> None:
         self.__name = name
+
         self.__df_hours = df_hours
-        self.__df_hours['date'] = pd.date_range(*DATE_RANGE, freq='1h')[:len(df_hours)]
+        self.__df_hours = pd.concat( # On rempli le dernier jours entièrement avec des 0.0
+            [self.__df_hours, pd.DataFrame(index=range(self.__df_hours.index[-1] + 1, self.__df_hours.index[-1] + (24 - len(self.__df_hours) % 24 + 1)))]
+        ).fillna(0.0)
+        self.__df_hours['date'] = pd.date_range(*DATE_RANGE, freq='1h')[:len(self.__df_hours)]
+
         self.__df_coordinates = df_coordinates
     
     @property

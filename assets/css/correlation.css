@@ -2,9 +2,18 @@
     display: flex;
 }
 
+#correlation_on_map {
+    display: flex;
+}
+
 #viewport_map_correlation {
     height: calc(100vh - var(--navbar_height));
     width: 60vw;
+}
+
+#viewport_on_map_correlation {
+    height: calc(100vh - var(--navbar_height));
+    width: 100vw;
 }
 
 #select_and_plot_correlation {

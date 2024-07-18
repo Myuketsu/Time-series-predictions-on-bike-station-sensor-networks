@@ -1,5 +1,6 @@
 from dash import Dash, html, page_container
 from dash_bootstrap_components import themes, icons
+import dash_mantine_components as dmc
 
 from pages.menu.navbar import get_navbar
 
